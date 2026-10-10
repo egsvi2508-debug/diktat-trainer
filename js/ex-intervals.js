@@ -14,23 +14,14 @@ const ExInt = {
     const S = this.S;
     P.settingsBody.append(
       segControl('int-dir', 'intDir', [['alt', t('intDirAlt')], ['up', t('intDirUp')], ['down', t('intDirDown')]], S.dir, v => { S.dir = v; this.save(); }),
-      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('intRange')),
-        el('div', { class: 'toggles' },
-          toggleControl('int-simple', 'intSimple', S.simple, (v, inp) => { if (!v && !S.compound) { inp.checked = true; return; } S.simple = v; this.save(); }),
-          toggleControl('int-comp', 'intCompound', S.compound, (v, inp) => { if (!v && !S.simple) { inp.checked = true; return; } S.compound = v; this.save(); }))),
+      toggleGroup('intRange',
+        toggleControl('int-simple', 'intSimple', S.simple, (v, inp) => { if (!v && !S.compound) { inp.checked = true; return; } S.simple = v; this.save(); }),
+        toggleControl('int-comp', 'intCompound', S.compound, (v, inp) => { if (!v && !S.simple) { inp.checked = true; return; } S.compound = v; this.save(); })),
       segControl('int-play', 'intPlayMode', [['mel', t('intMel')], ['harm', t('intHarm')]], S.play, v => { S.play = v; this.save(); })
     );
     this.playBtn = playButton('intPlay', () => this.events(), { primary: true });
-    this.givenBtn = playButton('intGivenOnly', () => [{ t: 0, midi: Note.midi(this.task.given), dur: 1.4 }]);
-    this.checkBtn = btn('check', ICON.check, () => this.check(), 'btn-ink');
-    this.solBtn = btn('showSolution', ICON.eye, () => this.reveal());
-    this.nextBtn = btn('nextTask', ICON.next, () => this.newTask(true));
-    P.controls.append(
-      el('div', { class: 'row' }, this.playBtn, this.givenBtn),
-      pitchToolbar(this, { nav: false }),
-      keyHelp(),
-      el('div', { class: 'row actions' }, this.checkBtn, this.solBtn, this.nextBtn)
-    );
+    P.transport.append(this.playBtn, playButton('intGivenOnly', () => [{ t: 0, midi: Note.midi(this.task.given), dur: 1.6 }]));
+    editRow(this, P, { nav: false });
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     if (!this.task) this.newTask(false); else this.render();
@@ -74,8 +65,8 @@ const ExInt = {
 
   events() {
     const g = Note.midi(this.task.given), x = Note.midi(this.task.target);
-    if (this.S.play === 'harm') return [{ t: 0, midi: g, dur: 2.2 }, { t: 0, midi: x, dur: 2.2 }];
-    return [{ t: 0, midi: g, dur: 1.15 }, { t: 1.3, midi: x, dur: 1.6 }];
+    if (this.S.play === 'harm') return [{ t: 0, midi: g, dur: 2.4, vel: 0.7 }, { t: 0, midi: x, dur: 2.4, vel: 0.7 }];
+    return [{ t: 0, midi: g, dur: 1.25, vel: 0.72 }, { t: 1.4, midi: x, dur: 1.9, vel: 0.72 }];
   },
 
   /* sequence-editor interface (one slot) */
@@ -132,9 +123,10 @@ const ExInt = {
     const { given, target, up } = this.task;
     P.taskbar.innerHTML = '';
     P.taskbar.append(
-      chip(t('taskN', { n: this.count }), 'chip-muted'),
       chip((up ? '↑ ' : '↓ ') + t(up ? 'intFindUpper' : 'intFindLower'), 'chip-strong'),
-      chip(t('intGiven', { n: noteName(given) }))
+      chip(t('intGiven', { n: noteName(given) })),
+      chip(t('taskN', { n: this.count }), 'chip-muted'),
+      statChip('int')
     );
     const cols = [{ note: given, color: C.ink, slot: 'given', locked: true, label: t('colGiven') }];
     if (!this.checked) cols.push({ note: this.ans, color: C.user, slot: 'ans', label: t('colYours') });
@@ -146,11 +138,7 @@ const ExInt = {
       if (!this.result.exact) cols.push({ note: target, color: C.ok, slot: 'sol', locked: true, label: t('colSolution') });
     }
     this.hit = renderGrand(P.score, cols, { sel: this.checked ? null : 'ans' });
-    this.checkBtn.disabled = this.checked;
-    this.solBtn.disabled = this.checked;
-    this.nextBtn.classList.toggle('btn-ink', this.checked);
-    this.nextBtn.classList.toggle('btn-sec', !this.checked);
-    P.stats.textContent = statText('int');
+    syncEditRow(this);
   },
 
   onKey(e) {

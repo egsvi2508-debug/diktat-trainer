@@ -61,6 +61,7 @@ function onsetGrid(durs) {
   });
   return g;
 }
+/* a rhythm group played on one piano key, the way a teacher would tap it out */
 function rhythmEvents(durs, tempo, opts = {}) {
   const six = 60 / tempo / 6;
   const ev = [];
@@ -69,7 +70,12 @@ function rhythmEvents(durs, tempo, opts = {}) {
   const reps = opts.reps || 2;
   for (let r = 0; r < reps; r++) {
     ev.push({ t: t0, click: true, accent: r === 0 });
-    durs.forEach(u => { ev.push({ t: t0, midi: 69, dur: u * six * 0.9, vel: 0.75 }); t0 += u * six; });
+    let pos = 0;
+    durs.forEach((u, k) => {
+      const vel = k === 0 ? (r === 0 ? 0.84 : 0.76) : pos % 2 === 0 ? 0.64 : 0.56;
+      ev.push({ t: t0, midi: 67, dur: u * six * 0.97, vel });
+      t0 += u * six; pos += u;
+    });
   }
   return ev;
 }
@@ -91,18 +97,23 @@ const ExLex = {
   build() {
     const root = this.root;
     root.innerHTML = '';
+    if (this.dlg) this.dlg.d.remove();
+    this.dlg = makeDialog(t('settings') + ' · ' + t(this.titleKey));
+    const preset = ids => { this.sel = new Set(ids); this.syncChecks(); this.saveSel(); };
+    this.dlg.body.append(
+      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('lexPresets')),
+        el('div', { class: 'row' },
+          btn('lexBasic', null, () => preset(RHY.BASIC)),
+          btn('lexAll', null, () => preset(RHY.list.map(p => p.id))),
+          btn('lexNone', null, () => preset(['6'])))),
+      sliderControl('lex-tempo', 'tempoDQ', 36, 84, 2, ExMel.S.tempo, v => '♩. = ' + v, v => { ExMel.S.tempo = v; ExMel.save(); })
+    );
     const head = el('div', { class: 'panel-head' },
       el('span', { class: 'ph-num', 'aria-hidden': 'true' }, this.no),
-      el('div', { class: 'ph-text' }, el('h2', {}, t(this.titleKey)), el('p', { class: 'ph-desc' }, t(this.descKey))));
-    this.countEl = el('span', { class: 'lex-count' });
-    const presets = el('div', { class: 'row lex-bar' },
-      btn('lexBasic', null, () => { this.sel = new Set(RHY.BASIC); this.syncChecks(); this.saveSel(); }),
-      btn('lexAll', null, () => { this.sel = new Set(RHY.list.map(p => p.id)); this.syncChecks(); this.saveSel(); }),
-      btn('lexNone', null, () => { this.sel = new Set(['6']); this.syncChecks(); this.saveSel(); }),
-      this.countEl,
-      el('span', { class: 'spacer' }),
-      this.quizBtn = btn('lexQuizStart', ICON.ear, () => this.toggleQuiz(), 'btn-ink'));
-    const tempoField = sliderControl('lex-tempo', 'tempoDQ', 36, 84, 2, ExMel.S.tempo, v => '♩. = ' + v, v => { ExMel.S.tempo = v; ExMel.save(); });
+      el('div', { class: 'ph-text' }, el('h2', {}, t(this.titleKey)), el('p', { class: 'ph-desc' }, t(this.descKey))),
+      iconBtn(ICON.sliders, 'settings', () => this.dlg.open(), 'icon-btn-lg'));
+    this.countEl = el('span', { class: 'chip chip-accent' });
+    this.quizBtn = btn('lexQuizStart', ICON.ear, () => this.toggleQuiz(), 'btn-play');
     this.quizBar = el('div', { class: 'quizbar', hidden: true });
     const groups = el('div', { class: 'lex-groups' });
     for (let n = 1; n <= 6; n++) {
@@ -113,35 +124,38 @@ const ExLex = {
         el('h3', {}, t(n === 1 ? 'lexOneNote' : 'lexNNotes', { n }), el('span', { class: 'lex-sec-n' }, String(pats.length))),
         grid));
     }
-    root.append(head, presets, el('div', { class: 'row lex-tempo' }, tempoField), this.quizBar, groups,
+    root.append(head,
+      el('div', { class: 'row lex-bar' }, this.quizBtn, this.countEl, el('span', { class: 'lex-tip' }, t('lexTapTip'))),
+      this.quizBar, groups,
       el('p', { class: 'legend' }, el('span', { class: 'tier-dot t0' }), t('tier0'), el('span', { class: 'tier-dot t1' }), t('tier1'), el('span', { class: 'tier-dot t2' }), t('tier2')));
     this.updateCount();
   },
   card(p) {
     const nota = el('div', { class: 'rc-nota' });
-    renderRhythmMini(nota, p.durs, 128, 1);
-    const cb = el('input', { type: 'checkbox', id: 'rc-' + p.id, 'data-id': p.id });
-    cb.checked = this.sel.has(p.id) || p.id === '6';
-    if (p.id === '6') cb.disabled = true;
-    cb.addEventListener('change', () => { if (cb.checked) this.sel.add(p.id); else this.sel.delete(p.id); card.classList.toggle('on', cb.checked); this.saveSel(); });
+    renderRhythmMini(nota, p.durs, 120, 1);
+    const on = this.sel.has(p.id) || p.id === '6';
     const play = el('button', { type: 'button', class: 'tb tb-small', title: t('lexPlay'), 'aria-label': t('lexPlay') + ': ' + patternName(p), html: ICON.play });
     play.addEventListener('click', ev => { ev.stopPropagation(); Sound.play(rhythmEvents(p.durs, ExMel.S.tempo)); });
-    const card = el('div', { class: 'rcard t' + p.tier + (cb.checked ? ' on' : ''), 'data-id': p.id },
+    const card = el('div', { class: 'rcard t' + p.tier + (on ? ' on' : ''), 'data-id': p.id, role: 'button', tabindex: '0', 'aria-pressed': String(on), title: p.id === '6' ? t('lexAlways') : t('lexUse') },
+      el('span', { class: 'rc-check', html: ICON.check, 'aria-hidden': 'true' }),
       el('div', { class: 'rc-top' }, nota, play),
       onsetGrid(p.durs),
-      el('div', { class: 'rc-name' }, el('span', { class: 'tier-dot t' + p.tier, title: t('tier' + p.tier) }), patternName(p)),
-      el('label', { class: 'rc-use', for: 'rc-' + p.id }, cb, el('span', {}, t(p.id === '6' ? 'lexAlways' : 'lexUse'))));
-    card.addEventListener('click', ev => {
-      if (!this.quiz || ev.target.closest('label,button')) return;
-      this.answerQuiz(p.id, card);
-    });
+      el('div', { class: 'rc-name' }, el('span', { class: 'tier-dot t' + p.tier, title: t('tier' + p.tier) }), patternName(p)));
+    const act = () => {
+      if (this.quiz) { this.answerQuiz(p.id, card); return; }
+      if (p.id === '6') return;
+      if (this.sel.has(p.id)) this.sel.delete(p.id); else this.sel.add(p.id);
+      this.syncChecks(); this.saveSel();
+    };
+    card.addEventListener('click', ev => { if (!ev.target.closest('button')) act(); });
+    card.addEventListener('keydown', ev => { if ((ev.key === 'Enter' || ev.key === ' ') && ev.target === card) { ev.preventDefault(); act(); } });
     return card;
   },
   syncChecks() {
     $$('.rcard', this.root).forEach(c => {
       const on = this.sel.has(c.dataset.id) || c.dataset.id === '6';
       c.classList.toggle('on', on);
-      const cb = $('input', c); if (cb) cb.checked = on;
+      c.setAttribute('aria-pressed', String(on));
     });
   },
   updateCount() { if (this.countEl) this.countEl.textContent = t('lexCount', { n: this.selected().length, total: RHY.list.length }); },
@@ -198,7 +212,7 @@ const ExLex = {
 /* ---------------- 2b: Melodiediktat ---------------- */
 const ExMel = {
   id: 'mel', no: '2b', titleKey: 'melTitle', descKey: 'melDesc',
-  S: Object.assign({ bars: 4, mode: 'maj', maxAcc: 3, tempo: 52, rhythmOnly: false, metro: false, allPats: false }, store.get('mel.s', {})),
+  S: Object.assign({ bars: 4, mode: 'maj', maxAcc: 3, tempo: 50, rhythmOnly: false, metro: false, allPats: false, countIn: true }, store.get('mel.s', {})),
   task: null, ans: null, cur: { b: 0, k: -1 }, checked: false, res: null, hit: null,
 
   save() { store.set('mel.s', this.S); },
@@ -211,37 +225,25 @@ const ExMel = {
       segControl('mel-mode', 'modeLbl', [['maj', t('major')], ['min', t('minor')], ['both', t('both')]], S.mode, v => { S.mode = v; this.save(); }),
       segControl('mel-acc', 'maxAcc', [0, 1, 2, 3, 4, 5].map(n => [n, String(n)]), S.maxAcc, v => { S.maxAcc = v; this.save(); }),
       sliderControl('mel-tempo', 'tempoDQ', 36, 84, 2, S.tempo, v => '♩. = ' + v, v => { S.tempo = v; this.save(); }),
-      el('div', { class: 'toggles' },
+      toggleGroup('options',
         toggleControl('mel-ronly', 'rhythmOnly', S.rhythmOnly, v => { S.rhythmOnly = v; this.save(); this.newTask(); }),
-        toggleControl('mel-metro', 'metroOn', S.metro, v => { S.metro = v; this.save(); }))
+        toggleControl('mel-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); }),
+        toggleControl('mel-metro', 'metroOn', S.metro, v => { S.metro = v; this.save(); }),
+        toggleControl('mel-allpats', 'palAll', S.allPats, v => { S.allPats = v; this.save(); this.renderPalette(); }))
     );
     this.playBtn = playButton('playDictation', () => this.events(this.task.beats, true), { primary: true });
     this.cadBtn = playButton('playCadence', () => cadenceEvents(this.task.key));
-    this.startBtn = playButton('playStart', () => [{ t: 0, midi: Note.midi(this.task.start), dur: 1.4 }]);
-    this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel') });
-    this.allToggle = toggleControl('mel-allpats', 'palAll', S.allPats, v => { S.allPats = v; this.save(); this.renderPalette(); });
-    this.tb = pitchToolbar(this);
-    this.help = keyHelp('keyHelpMel');
-    this.checkBtn = btn('check', ICON.check, () => this.check(), 'btn-ink');
-    this.solBtn = btn('showSolution', ICON.eye, () => this.reveal());
-    this.nextBtn = btn('nextTask', ICON.next, () => this.newTask());
-    this.afterRow = el('div', { class: 'row', hidden: true },
-      playButton('playYours', () => this.events(this.ans.filter(b => b.pat), false)),
-      playButton('playSolution', () => this.events(this.task.beats, false)));
-    this.solHost = el('div', { class: 'score' });
-    this.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, this.solHost));
-    P.controls.append(
-      el('div', { class: 'row' }, this.playBtn, this.cadBtn, this.startBtn),
-      el('div', { class: 'pal-wrap' }, el('div', { class: 'pal-head' }, el('span', { class: 'field-lbl' }, t('palLabel')), this.allToggle), this.palette),
-      this.tb, this.help,
-      el('div', { class: 'row actions' }, this.checkBtn, this.solBtn, this.nextBtn),
-      this.afterRow
-    );
-    this.root.insertBefore(this.solWrap, P.stats);
+    this.startBtn = playButton('playStart', () => [{ t: 0, midi: Note.midi(this.task.start), dur: 1.6 }]);
+    this.yoursBtn = playButton('playYours', () => this.events(this.ans.filter(b => b.pat), false));
+    this.solPlayBtn = playButton('playSolution', () => this.events(this.task.beats, false));
+    P.transport.append(this.playBtn, this.cadBtn, this.startBtn, this.yoursBtn, this.solPlayBtn);
+    this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel'), title: t('palLabel') });
+    P.edit.before(this.palette);
+    editRow(this, P);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
-    watchWidth(this.solHost, () => this.renderSolution());
-    if (!this.task) this.newTask(); else this.render();
+    watchWidth(P.solHost, () => this.renderSolution());
+    if (!this.task) this.newTask(); else { this.renderPalette(); this.render(); }
   },
 
   newTask() {
@@ -259,24 +261,27 @@ const ExMel = {
     this.checked = false; this.res = null;
     if (this.P) {
       setFeedback(this.P.feedback, '', '');
-      this.afterRow.hidden = true;
-      this.solWrap.hidden = true;
+      this.P.solWrap.hidden = true;
       this.renderPalette();
       this.render();
     }
   },
 
+  /* played like a person: strong 1, lighter 4, soft inner notes, legato, a small ritardando into the last note */
   events(beats, countIn) {
-    const six = 60 / this.S.tempo / 6;
-    const ev = [];
+    const S = this.S, six = 60 / S.tempo / 6, nb = beats.length, ev = [];
     let t0 = 0;
-    if (countIn) { for (let i = 0; i < 6; i++) ev.push({ t: i * 2 * six, click: true, accent: i % 3 === 0 }); t0 = 12 * six; }
+    if (countIn && S.countIn) { for (let i = 0; i < 6; i++) ev.push({ t: i * 2 * six, click: true, accent: i % 3 === 0 }); t0 = 12 * six; }
     beats.forEach((bt, b) => {
-      if (this.S.metro) ev.push({ t: t0, click: true, accent: b % 2 === 0 });
+      if (S.metro) ev.push({ t: t0, click: true, accent: b % 2 === 0 });
+      const stretch = b >= nb - 2 ? 1 + 0.05 * (b - nb + 3) : 1;
+      let pos = 0;
       bt.pat.split('-').map(Number).forEach((u, k) => {
-        const n = bt.notes[k];
-        ev.push({ t: t0, midi: this.S.rhythmOnly ? 69 : Note.midi(n), dur: u * six * 0.94, vel: k === 0 ? (b % 2 === 0 ? 0.92 : 0.84) : 0.72 });
-        t0 += u * six;
+        const n = bt.notes[k], last = b === nb - 1;
+        const vel = last ? 0.66 : k === 0 ? (b % 2 === 0 ? 0.8 : 0.7) : pos % 2 === 0 ? 0.6 : 0.54;
+        const ioi = u * six * stretch;
+        ev.push({ t: t0, midi: S.rhythmOnly ? 67 : Note.midi(n), dur: last ? ioi * 1.8 : S.rhythmOnly ? ioi * 0.92 : ioi * 1.04, vel });
+        t0 += ioi; pos += u;
       });
     });
     return ev;
@@ -368,7 +373,7 @@ const ExMel = {
     RHY.list.filter(p => ids.includes(p.id)).forEach(p => {
       const box = el('span', { class: 'pal-nota' });
       const b = el('button', { type: 'button', class: 'pal-b', title: patternName(p), 'aria-label': patternName(p) }, box);
-      renderRhythmMini(box, p.durs, 96, 0.82);
+      renderRhythmMini(box, p.durs, 92, 0.78);
       b.addEventListener('click', () => this.applyPattern(p.id));
       this.palette.append(b);
     });
@@ -396,16 +401,14 @@ const ExMel = {
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     const line = ronly ? t('melResR', { r: rOk, nb }) : t('melRes', { r: rOk, nb, p: pOk, pt: pTot });
     setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(line)}</span>`);
-    this.afterRow.hidden = false;
-    this.solWrap.hidden = false;
+    this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
   reveal() {
     if (this.checked) return;
     this.checked = true;
     setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
-    this.afterRow.hidden = false;
-    this.solWrap.hidden = false;
+    this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
 
@@ -433,7 +436,8 @@ const ExMel = {
     const P = this.P, C = notaColors(), S = this.S, task = this.task;
     P.taskbar.innerHTML = '';
     if (!S.rhythmOnly) P.taskbar.append(chip(t('keyChip', { k: keyName(task.key) }), 'chip-strong'), chip(t('startChip', { n: noteName(task.start) })));
-    P.taskbar.append(chip('6/8'), chip(t('barsChip', { n: S.bars }), 'chip-muted'));
+    else P.taskbar.append(chip(t('rhythmOnly'), 'chip-strong'));
+    P.taskbar.append(chip('6/8 · ' + t('barsChip', { n: S.bars }), 'chip-muted'), statChip('mel'));
     const res = this.res;
     const measures = this.measuresFor(this.ans, (b, k) => {
       if (!res) return k < 0 ? null : { color: C.user };
@@ -446,19 +450,16 @@ const ExMel = {
       clef: 'treble', key: S.rhythmOnly ? null : task.key, time: '6/8', beats: 6, beatValue: 8,
       measures, minMW: 150, maxMPL: 4, sel, range: this.diaRange()
     });
-    this.checkBtn.disabled = this.checked;
-    this.solBtn.disabled = this.checked;
-    this.nextBtn.classList.toggle('btn-ink', this.checked);
-    this.nextBtn.classList.toggle('btn-sec', !this.checked);
+    syncEditRow(this);
     this.palette.classList.toggle('dim', this.checked);
     this.tb.hidden = S.rhythmOnly;
-    this.startBtn.hidden = S.rhythmOnly;
-    this.cadBtn.hidden = S.rhythmOnly;
-    P.stats.textContent = statText('mel');
+    this.startBtn.hidden = S.rhythmOnly || this.checked;
+    this.cadBtn.hidden = S.rhythmOnly || this.checked;
+    this.yoursBtn.hidden = this.solPlayBtn.hidden = !this.checked;
   },
   renderSolution() {
-    if (!this.checked || this.solWrap.hidden) return;
-    renderLines(this.solHost, {
+    if (!this.P || !this.checked || this.P.solWrap.hidden) return;
+    renderLines(this.P.solHost, {
       clef: 'treble', key: this.S.rhythmOnly ? null : this.task.key, time: '6/8', beats: 6, beatValue: 8,
       measures: this.measuresFor(this.task.beats, () => ({ color: 'currentColor' }), false), minMW: 150, maxMPL: 4
     });

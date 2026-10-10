@@ -7,10 +7,10 @@ function makeFlight(kind) {
   return {
     id, kind, no: kind === 2 ? '3' : '4',
     titleKey: kind === 2 ? 'secTitle' : 'terTitle', descKey: kind === 2 ? 'secDesc' : 'terDesc',
-    S: Object.assign({ bars: 4, mode: 'free', clef: 'treble', tempo: 84, limit: true }, store.get(id + '.s', {})),
+    S: Object.assign({ bars: 4, mode: 'free', clef: 'treble', tempo: 44, limit: true, countIn: true }, store.get(id + '.s2', {})),
     task: null, ans: null, cursor: 1, checked: false, res: null, hit: null, playsLeft: 3,
 
-    save() { store.set(this.id + '.s', this.S); },
+    save() { store.set(this.id + '.s2', this.S); },
 
     build() {
       const P = this.P = panelShell(this);
@@ -19,32 +19,24 @@ function makeFlight(kind) {
         segControl(id + '-bars', 'bars', [[4, '4'], [8, '8']], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
         segControl(id + '-mode', 'flMode', [['free', t('flFree')], ['key', t('flKey')]], S.mode, v => { S.mode = v; this.save(); this.newTask(); }),
         segControl(id + '-clef', 'clefLbl', [['treble', t('clefTreble')], ['bass', t('clefBass')]], S.clef, v => { S.clef = v; this.save(); this.newTask(); }),
-        sliderControl(id + '-tempo', 'tempoQ', 50, 140, 2, S.tempo, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }),
-        el('div', { class: 'toggles' }, toggleControl(id + '-limit', 'flLimit', S.limit, v => { S.limit = v; this.save(); this.render(); }))
+        sliderControl(id + '-tempo', 'tempoQ', 30, 100, 2, S.tempo, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }),
+        toggleGroup('options',
+          toggleControl(id + '-limit', 'flLimit', S.limit, v => { S.limit = v; this.save(); this.render(); }),
+          toggleControl(id + '-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); }))
       );
       this.playBtn = playButton('playDictation', () => this.events(true), {
         primary: true,
         allowed: () => this.checked || !this.S.limit || this.playsLeft > 0,
         before: () => { if (!this.checked && this.S.limit) { this.playsLeft--; this.render(); } }
       });
-      this.startBtn = playButton('playStart', () => [{ t: 0, midi: Note.midi(this.task.notes[0]), dur: 1.4 }]);
-      this.checkBtn = btn('check', ICON.check, () => this.check(), 'btn-ink');
-      this.solBtn = btn('showSolution', ICON.eye, () => this.reveal());
-      this.nextBtn = btn('nextTask', ICON.next, () => this.newTask());
+      this.startBtn = playButton('playStart', () => [{ t: 0, midi: Note.midi(this.task.notes[0]), dur: 1.6 }]);
       this.tip = el('p', { class: 'tip' }, el('span', { class: 'tip-ico', html: ICON.ear }), el('span', {}, t('flTip')));
-      this.solHost = el('div', { class: 'score' });
-      this.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, this.solHost));
-      P.controls.append(
-        el('div', { class: 'row' }, this.playBtn, this.startBtn),
-        this.tip,
-        pitchToolbar(this),
-        keyHelp(),
-        el('div', { class: 'row actions' }, this.checkBtn, this.solBtn, this.nextBtn)
-      );
-      this.root.insertBefore(this.solWrap, P.stats);
+      P.transport.append(this.playBtn, this.startBtn);
+      P.sheet.before(this.tip);
+      editRow(this, P);
       bindStaffInput(P.score, this);
       watchWidth(P.score, () => this.render());
-      watchWidth(this.solHost, () => this.renderSolution());
+      watchWidth(P.solHost, () => this.renderSolution());
       if (!this.task) this.newTask(); else this.render();
     },
 
@@ -88,16 +80,22 @@ function makeFlight(kind) {
       this.checked = false; this.res = null; this.playsLeft = 3;
       if (this.P) {
         setFeedback(this.P.feedback, '', '');
-        this.solWrap.hidden = true;
+        this.P.solWrap.hidden = true;
         this.render();
       }
     },
 
+    /* slow, legato, with a light accent on each downbeat and a little ritardando at the very end */
     events(countIn) {
-      const q = 60 / this.S.tempo, ev = [];
+      const S = this.S, q = 60 / S.tempo, ev = [], N = this.task.notes.length;
       let t0 = 0;
-      if (countIn) { for (let i = 0; i < 4; i++) ev.push({ t: i * q, click: true, accent: i === 0 }); t0 = 4 * q; }
-      this.task.notes.forEach((n, i) => ev.push({ t: t0 + i * q, midi: Note.midi(n), dur: q * 0.92, vel: i % 4 === 0 ? 0.9 : 0.76 }));
+      if (countIn && S.countIn) { for (let i = 0; i < 4; i++) ev.push({ t: i * q, click: true, accent: i === 0 }); t0 = 4 * q; }
+      this.task.notes.forEach((n, i) => {
+        const fromEnd = N - 1 - i, ioi = q * (fromEnd < 3 ? 1 + 0.06 * (3 - fromEnd) : 1);
+        const vel = i === N - 1 ? 0.6 : i % 4 === 0 ? 0.74 : i % 4 === 2 ? 0.66 : 0.6;
+        ev.push({ t: t0, midi: Note.midi(n), dur: i === N - 1 ? ioi * 2 : ioi * 1.03, vel });
+        t0 += ioi;
+      });
       return ev;
     },
 
@@ -155,14 +153,14 @@ function makeFlight(kind) {
       let msg = t('flRes', { ok, n });
       if (enh) msg += ' ' + t('flEnh', { n: enh });
       setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`);
-      this.solWrap.hidden = false;
+      this.P.solWrap.hidden = false;
       this.render(); this.renderSolution();
     },
     reveal() {
       if (this.checked) return;
       this.checked = true;
       setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
-      this.solWrap.hidden = false;
+      this.P.solWrap.hidden = false;
       this.render(); this.renderSolution();
     },
 
@@ -182,11 +180,11 @@ function makeFlight(kind) {
       if (!this.P || !this.task) return;
       const P = this.P, C = notaColors(), S = this.S;
       P.taskbar.innerHTML = '';
+      if (S.limit && !this.checked) P.taskbar.append(chip(t('playsLeft', { n: this.playsLeft }), this.playsLeft ? 'chip-accent' : 'chip-bad'));
       if (this.task.key) P.taskbar.append(chip(t('keyChip', { k: keyName(this.task.key) }), 'chip-strong'));
       else P.taskbar.append(chip(t('flFreeChip'), 'chip-strong'));
       P.taskbar.append(chip(t('startChip', { n: noteName(this.task.notes[0]) })),
-        chip(t('barsChip', { n: S.bars }) + ' · ' + t('notesChip', { n: this.task.notes.length }), 'chip-muted'));
-      if (S.limit && !this.checked) P.taskbar.append(chip(t('playsLeft', { n: this.playsLeft }), this.playsLeft ? 'chip-accent' : 'chip-bad'));
+        chip('♩ = ' + S.tempo + ' · ' + t('notesChip', { n: this.task.notes.length }), 'chip-muted'), statChip(this.id));
       const marks = this.res ? this.res.marks : null;
       const measures = this.measures(this.ans, i => i === 0 ? 'currentColor' : marks ? (marks[i] === 'ok' ? C.ok : C.bad) : C.user, true);
       this.hit = renderLines(P.score, {
@@ -194,15 +192,12 @@ function makeFlight(kind) {
         minMW: 130, maxMPL: 4, sel: this.checked ? null : 'n' + this.cursor, range: this.diaRange()
       });
       this.playBtn.disabled = !this.checked && S.limit && this.playsLeft <= 0;
-      this.checkBtn.disabled = this.checked;
-      this.solBtn.disabled = this.checked;
-      this.nextBtn.classList.toggle('btn-ink', this.checked);
-      this.nextBtn.classList.toggle('btn-sec', !this.checked);
-      P.stats.textContent = statText(this.id);
+      syncEditRow(this);
+      this.tip.hidden = this.checked;
     },
     renderSolution() {
-      if (!this.checked || this.solWrap.hidden) return;
-      renderLines(this.solHost, {
+      if (!this.P || !this.checked || this.P.solWrap.hidden) return;
+      renderLines(this.P.solHost, {
         clef: this.S.clef, key: this.task.key, time: '4/4', beats: 4, beatValue: 4,
         measures: this.measures(this.task.notes, () => 'currentColor', false), minMW: 130, maxMPL: 4
       });

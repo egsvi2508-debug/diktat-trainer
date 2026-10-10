@@ -36,7 +36,8 @@ const App = {
     document.addEventListener('keydown', e => {
       const tg = e.target;
       if (tg && tg.closest && tg.closest('input[type=range], input[type=text], textarea, select')) return;
-      if ((e.key === ' ' || e.key === 'Enter') && tg && tg.closest && tg.closest('button, summary, input, a, label')) return;
+      if ((e.key === ' ' || e.key === 'Enter') && tg && tg.closest && tg.closest('button, summary, input, a, label, [role=button]')) return;
+      if (document.querySelector('dialog[open]')) return;
       const ex = this.active;
       if (ex && ex.onKey && ex.onKey(e)) e.preventDefault();
     });
@@ -73,34 +74,39 @@ const App = {
       $('#t-' + this.list[j].hash).focus();
       e.stopPropagation(); e.preventDefault();
     });
-    // global controls
+    // header: quick language switch + one menu for everything global
     const g = $('#gctl');
     g.innerHTML = '';
-    const lang = el('div', { class: 'seg seg-sm', role: 'radiogroup', 'aria-label': t('langLbl') });
-    [['de', 'DE'], ['en', 'EN']].forEach(([v, lab]) => {
-      const b = el('button', { type: 'button', class: 'seg-b', role: 'radio', 'aria-checked': String(LANG === v) }, lab);
-      b.addEventListener('click', () => this.setLang(v));
-      lang.append(b);
-    });
-    const vol = el('input', { type: 'range', id: 'g-vol', min: '0', max: '1', step: '0.05', value: String(Sound.volume), 'aria-label': t('volume') });
-    vol.addEventListener('input', () => Sound.setVolume(+vol.value));
+    const other = LANG === 'de' ? 'en' : 'de';
+    g.append(
+      el('button', { type: 'button', class: 'icon-btn lang-btn', title: t('langLbl'), 'aria-label': t('langLbl') + ': ' + other.toUpperCase(), onclick: () => this.setLang(other) }, other.toUpperCase()),
+      iconBtn(ICON.menu, 'menu', () => this.menu.open(), 'icon-btn-lg'));
+    if (this.menu) this.menu.d.remove();
+    this.menu = makeDialog(t('menu'));
+    const vol = sliderControl('g-vol', 'volume', 0, 1, 0.05, Sound.volume, v => Math.round(v * 100) + ' %', v => Sound.setVolume(v));
     const hear = toggleControl('g-hear', 'hearInput', this.hearInput, v => { this.hearInput = v; store.set('hearInput', v); });
-    hear.title = t('hearInputTip');
-    g.append(lang, el('label', { class: 'vol', for: 'g-vol', title: t('volume') }, el('span', { class: 'ico', html: ICON.speaker }), vol), hear);
-    // static text
-    $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
-    const rs = $('#reset-stats');
-    rs.onclick = () => {
-      if (rs.dataset.armed) {
+    const reset = el('button', { type: 'button', class: 'btn btn-sec btn-sm' }, t('resetStats'));
+    reset.addEventListener('click', () => {
+      if (reset.dataset.armed) {
         try { Object.keys(localStorage).filter(k => k.startsWith('sdt:stats:')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* blocked */ }
-        rs.textContent = t('resetDone'); delete rs.dataset.armed;
+        reset.textContent = t('resetDone'); delete reset.dataset.armed;
         const ex = this.active; if (ex && ex.render) ex.render();
-        setTimeout(() => { rs.textContent = t('resetStats'); }, 1800);
         return;
       }
-      rs.dataset.armed = '1'; rs.textContent = t('resetConfirm');
-      setTimeout(() => { if (rs.dataset.armed) { delete rs.dataset.armed; rs.textContent = t('resetStats'); } }, 4000);
-    };
+      reset.dataset.armed = '1'; reset.textContent = t('resetConfirm');
+      setTimeout(() => { if (reset.dataset.armed) { delete reset.dataset.armed; reset.textContent = t('resetStats'); } }, 4000);
+    });
+    const keys = el('dl', { class: 'keys' });
+    t('keysList').split('|').forEach(line => { const [k, v] = line.split('='); keys.append(el('dt', {}, k), el('dd', {}, v)); });
+    this.menu.body.append(
+      segControl('g-lang', 'langLbl', [['de', 'Deutsch'], ['en', 'English']], LANG, v => { this.menu.d.close(); this.setLang(v); }),
+      vol,
+      toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
+      el('div', { class: 'field keys-field' }, el('span', { class: 'field-lbl' }, t('keysTitle')), keys),
+      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('statsTitle')), el('div', { class: 'row' }, reset)),
+      el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))
+    );
+    $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
   },
 
   show(hash) {

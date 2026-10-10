@@ -17,6 +17,9 @@ VEXFLOW_URL = 'https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js'
 FONTS_CSS_URL = ('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400'
                  '&family=Young+Serif&display=swap')
 UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
+SAMPLE_URL = 'https://tonejs.github.io/audio/salamander/{}.mp3'   # Salamander Grand Piano, A. Holm, CC BY 3.0
+NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']
+SAMPLES = [NOTE_NAMES[m % 12] + str(m // 12 - 1) for m in range(33, 97, 3)]   # A1 … C7, same list as js/audio.js
 JS_FILES = ['i18n.js', 'core.js', 'notation.js', 'audio.js', 'ui.js',
             'ex-intervals.js', 'ex-rhythm.js', 'ex-flight.js', 'ex-harmony.js', 'app.js']
 NAME, SHORT = 'Satzlehre Diktat-Trainer', 'Diktat-Trainer'
@@ -114,6 +117,9 @@ def build_site():
     (OUT / 'js').mkdir(parents=True)
     (OUT / 'vendor').mkdir()
     (OUT / 'fonts').mkdir()
+    (OUT / 'samples').mkdir()
+    for n in SAMPLES:
+        (OUT / 'samples' / f'{n}.mp3').write_bytes(fetch(SAMPLE_URL.format(n), binary=True))
     for f in JS_FILES:
         shutil.copy(ROOT / 'js' / f, OUT / 'js' / f)
     (OUT / 'vendor' / 'vexflow.js').write_text(fetch(VEXFLOW_URL), 'utf-8')
@@ -121,8 +127,11 @@ def build_site():
     make_icons(OUT / 'icons')
     title, style, body = split_page()
     scripts = '\n'.join(['<script src="vendor/vexflow.js"></script>'] + [f'<script src="js/{f}"></script>' for f in JS_FILES])
-    sw_reg = ("<script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) "
-              "navigator.serviceWorker.register('sw.js').catch(() => {});</script>")
+    # register the offline cache; when a new version is published, reload once so it takes effect
+    sw_reg = ("<script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {"
+              "const had = !!navigator.serviceWorker.controller;"
+              "navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) location.reload(); });"
+              "navigator.serviceWorker.register('sw.js').catch(() => {}); }</script>")
     extra = ('<link rel="manifest" href="manifest.webmanifest">\n'
              '<link rel="icon" href="icons/favicon-64.png" type="image/png">\n'
              '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
@@ -174,7 +183,9 @@ def build_single():
     title, style, body = split_page()
     def inline(code):
         return '<script>\n' + code.replace('</script', '<\\/script') + '\n</script>'
-    scripts = '\n'.join([inline(fetch(VEXFLOW_URL))] + [inline((ROOT / 'js' / f).read_text('utf-8')) for f in JS_FILES])
+    samples = {n: base64.b64encode(fetch(SAMPLE_URL.format(n), binary=True)).decode() for n in SAMPLES}
+    scripts = '\n'.join([inline(fetch(VEXFLOW_URL)), inline('window.PIANO_SAMPLES = ' + json.dumps(samples) + ';')]
+                         + [inline((ROOT / 'js' / f).read_text('utf-8')) for f in JS_FILES])
     icon = base64.b64encode((OUT / 'icons' / 'favicon-64.png').read_bytes()).decode()
     html = (f'<!doctype html>\n<html lang="de">\n<head>\n{head_meta()}'
             f'<link rel="icon" href="data:image/png;base64,{icon}">\n{title}\n'

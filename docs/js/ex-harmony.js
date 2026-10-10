@@ -374,37 +374,25 @@ const ExHar = {
       segControl('har-n', 'harN', [[4, '4'], [6, '6'], [8, '8']], S.n, v => { S.n = v; this.save(); this.newTask(); }),
       segControl('har-mode', 'modeLbl', [['maj', t('major')], ['min', t('minor')], ['both', t('both')]], S.mode, v => { S.mode = v; this.save(); }),
       segControl('har-acc', 'maxAcc', [0, 1, 2, 3, 4].map(n => [n, String(n)]), S.maxAcc, v => { S.maxAcc = v; this.save(); }),
-      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('harChords')),
-        el('div', { class: 'toggles' },
-          toggleControl('har-inv', 'harInv', S.inv, v => { S.inv = v; this.save(); }),
-          toggleControl('har-sev', 'harSev', S.sev, v => { S.sev = v; this.save(); }),
-          toggleControl('har-dd', 'harDD', S.dd, v => { S.dd = v; this.save(); }))),
+      toggleGroup('harChords',
+        toggleControl('har-inv', 'harInv', S.inv, v => { S.inv = v; this.save(); }),
+        toggleControl('har-sev', 'harSev', S.sev, v => { S.sev = v; this.save(); }),
+        toggleControl('har-dd', 'harDD', S.dd, v => { S.dd = v; this.save(); })),
       sliderControl('har-dur', 'harDur', 0.8, 3.2, 0.1, S.dur, v => v.toFixed(1) + ' s', v => { S.dur = v; this.save(); }),
       sliderControl('har-boost', 'harBoost', 1, 4, 0.1, S.boost, db, v => { S.boost = v; this.save(); }),
-      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('harShow')),
-        el('div', { class: 'toggles' },
-          toggleControl('har-sf', 'rowFunc', S.F, v => { S.F = v; this.save(); this.renderSolution(); }),
-          toggleControl('har-ss', 'rowStufe', S.St, v => { S.St = v; this.save(); this.renderSolution(); }),
-          toggleControl('har-sg', 'rowGB', S.G, v => { S.G = v; this.save(); this.renderSolution(); })))
+      toggleGroup('harShow',
+        toggleControl('har-sf', 'rowFunc', S.F, v => { S.F = v; this.save(); this.renderSolution(); }),
+        toggleControl('har-ss', 'rowStufe', S.St, v => { S.St = v; this.save(); this.renderSolution(); }),
+        toggleControl('har-sg', 'rowGB', S.G, v => { S.G = v; this.save(); this.renderSolution(); }))
     );
     this.playBtn = playButton('playProgression', () => this.events(false), { primary: true });
     this.cadBtn = playButton('playCadence', () => cadenceEvents(this.task.key));
     this.bassBtn = playButton('playBassOnly', () => this.events(true));
-    this.checkBtn = btn('check', ICON.check, () => this.check(), 'btn-ink');
-    this.solBtn = btn('showSolution', ICON.eye, () => this.reveal());
-    this.nextBtn = btn('nextTask', ICON.next, () => this.newTask());
-    this.solHost = el('div', { class: 'score' });
-    this.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, this.solHost));
-    P.controls.append(
-      el('div', { class: 'row' }, this.playBtn, this.cadBtn, this.bassBtn),
-      pitchToolbar(this),
-      keyHelp(),
-      el('div', { class: 'row actions' }, this.checkBtn, this.solBtn, this.nextBtn)
-    );
-    this.root.insertBefore(this.solWrap, P.stats);
+    P.transport.append(this.playBtn, this.cadBtn, this.bassBtn);
+    editRow(this, P);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
-    watchWidth(this.solHost, () => this.renderSolution());
+    watchWidth(P.solHost, () => this.renderSolution());
     if (!this.task) this.newTask(); else this.render();
   },
 
@@ -417,7 +405,7 @@ const ExHar = {
     this.checked = false; this.res = null;
     if (this.P) {
       setFeedback(this.P.feedback, '', '');
-      this.solWrap.hidden = true;
+      this.P.solWrap.hidden = true;
       this.render();
     }
   },
@@ -428,7 +416,7 @@ const ExHar = {
       const last = i === this.task.notes.length - 1;
       ch.forEach((n, k) => {
         if (bassOnly && k > 0) return;
-        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.6 : d * 0.97, vel: k === 0 ? 0.85 : 0.55, gain: k === 0 && !bassOnly ? this.S.boost : 1 });
+        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.8 : d * 1.01, vel: k === 0 ? 0.8 : last ? 0.5 : 0.56, gain: k === 0 && !bassOnly ? this.S.boost : 1 });
       });
     });
     return ev;
@@ -484,14 +472,14 @@ const ExHar = {
     let msg = t('harRes', { ok, n });
     if (oct) msg += ' ' + t('harOct', { n: oct });
     setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`);
-    this.solWrap.hidden = false;
+    this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
   reveal() {
     if (this.checked) return;
     this.checked = true;
     setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
-    this.solWrap.hidden = false;
+    this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
 
@@ -501,7 +489,7 @@ const ExHar = {
     P.taskbar.innerHTML = '';
     P.taskbar.append(chip(t('keyChip', { k: keyName(task.key) }), 'chip-strong'),
       chip(t('harFirstBass', { n: noteName(task.notes[0][0]) })),
-      chip(t('harNChords', { n: task.notes.length }), 'chip-muted'));
+      chip(t('harNChords', { n: task.notes.length }), 'chip-muted'), statChip('har'));
     const marks = this.res ? this.res.marks : null;
     const measures = [];
     for (let m = 0; m < Math.ceil(this.ans.length / 2); m++) {
@@ -519,15 +507,11 @@ const ExHar = {
       minMW: 112, maxMPL: 4, sel: this.checked ? null : 'c' + this.cursor, range: this.diaRange()
     });
     this.bassBtn.hidden = !this.checked;
-    this.checkBtn.disabled = this.checked;
-    this.solBtn.disabled = this.checked;
-    this.nextBtn.classList.toggle('btn-ink', this.checked);
-    this.nextBtn.classList.toggle('btn-sec', !this.checked);
-    P.stats.textContent = statText('har');
+    syncEditRow(this);
   },
   renderSolution() {
-    if (!this.P || !this.checked || this.solWrap.hidden) return;
-    renderChorale(this.solHost, this.task, { F: this.S.F, S: this.S.St, G: this.S.G }, { bass: 'currentColor' });
+    if (!this.P || !this.checked || this.P.solWrap.hidden) return;
+    renderChorale(this.P.solHost, this.task, { F: this.S.F, S: this.S.St, G: this.S.G }, { bass: 'currentColor' });
   },
   onKey(e) {
     if (e.key === ' ') { this.playBtn.trigger(); return true; }
