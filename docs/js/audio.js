@@ -239,12 +239,13 @@ const Sound = (() => {
 
 /* A play button with a progress bar; a second press stops playback */
 function playButton(labelKey, getEvents, opts = {}) {
-  const lab = el('span', { class: 'lbl' }, t(labelKey));
+  const text = () => opts.labelFn ? opts.labelFn() : t(labelKey);
+  const lab = el('span', { class: 'lbl' }, text());
   const bar = el('span', { class: 'prog' });
   const ico = el('span', { class: 'ico', html: ICON.play });
   const btn = el('button', { type: 'button', class: 'btn ' + (opts.primary ? 'btn-play' : 'btn-sec btn-sm'), title: t(labelKey) }, ico, lab, bar);
   let mine = false;
-  const reset = () => { mine = false; btn.classList.remove('is-playing', 'is-loading'); bar.style.width = '0'; ico.innerHTML = ICON.play; lab.textContent = t(labelKey); };
+  const reset = () => { mine = false; btn.classList.remove('is-playing', 'is-loading'); bar.style.width = '0'; ico.innerHTML = ICON.play; lab.textContent = text(); };
   btn.addEventListener('click', () => {
     if (mine && Sound.playing) { Sound.stop(); return; }
     if (opts.allowed && !opts.allowed()) return;
@@ -253,7 +254,7 @@ function playButton(labelKey, getEvents, opts = {}) {
     if (opts.before) opts.before();
     Sound.play(evs, {
       onLoading: () => { btn.classList.add('is-loading'); lab.textContent = t('loadingPiano'); },
-      onStart: () => { btn.classList.remove('is-loading'); lab.textContent = t(labelKey); },
+      onStart: () => { btn.classList.remove('is-loading'); lab.textContent = text(); },
       onProgress: p => { bar.style.width = (p * 100).toFixed(1) + '%'; },
       onEnd: () => { reset(); if (opts.after) opts.after(); }
     });
@@ -262,5 +263,6 @@ function playButton(labelKey, getEvents, opts = {}) {
     ico.innerHTML = ICON.stop;
   });
   btn.trigger = () => btn.click();
+  btn.refresh = () => { if (!btn.classList.contains('is-loading')) lab.textContent = text(); };
   return btn;
 }

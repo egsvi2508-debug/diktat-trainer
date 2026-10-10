@@ -77,12 +77,10 @@ const App = {
     // header: quick language switch + one menu for everything global
     const g = $('#gctl');
     g.innerHTML = '';
-    const other = LANG === 'de' ? 'en' : 'de';
-    g.append(
-      el('button', { type: 'button', class: 'icon-btn lang-btn', title: t('langLbl'), 'aria-label': t('langLbl') + ': ' + other.toUpperCase(), onclick: () => this.setLang(other) }, other.toUpperCase()),
-      iconBtn(ICON.menu, 'menu', () => this.menu.open(), 'icon-btn-lg'));
+    g.append(iconBtn(ICON.gear, 'settings', () => this.openSettings(), 'icon-btn-lg'));
     if (this.menu) this.menu.d.remove();
-    this.menu = makeDialog(t('menu'));
+    this.menu = makeDialog(t('settings'));
+    this.exSection = el('section', { class: 'set-sec' });
     const vol = sliderControl('g-vol', 'volume', 0, 1, 0.05, Sound.volume, v => Math.round(v * 100) + ' %', v => Sound.setVolume(v));
     const hear = toggleControl('g-hear', 'hearInput', this.hearInput, v => { this.hearInput = v; store.set('hearInput', v); });
     const reset = el('button', { type: 'button', class: 'btn btn-sec btn-sm' }, t('resetStats'));
@@ -99,6 +97,8 @@ const App = {
     const keys = el('dl', { class: 'keys' });
     t('keysList').split('|').forEach(line => { const [k, v] = line.split('='); keys.append(el('dt', {}, k), el('dd', {}, v)); });
     this.menu.body.append(
+      this.exSection,
+      el('h4', { class: 'set-h' }, t('general')),
       segControl('g-lang', 'langLbl', [['de', 'Deutsch'], ['en', 'English']], LANG, v => { this.menu.d.close(); this.setLang(v); }),
       vol,
       toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
@@ -107,6 +107,12 @@ const App = {
       el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))
     );
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+  },
+
+  openSettings() {
+    const ex = this.active;
+    this.exSection.replaceChildren(el('h4', { class: 'set-h' }, t(ex.titleKey)), ex.P ? ex.P.settingsBody : '');
+    this.menu.open();
   },
 
   show(hash) {

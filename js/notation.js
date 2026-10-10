@@ -21,6 +21,7 @@ const ICON = {
   eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>',
   next: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5.5L18.5 12 13 17.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   speaker: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 13.5a7.6 7.6 0 0 0 0-3l2-1.6-2-3.4-2.4.9a7.5 7.5 0 0 0-2.6-1.5L14 2.4h-4l-.4 2.5A7.5 7.5 0 0 0 7 6.4l-2.4-.9-2 3.4 2 1.6a7.6 7.6 0 0 0 0 3l-2 1.6 2 3.4 2.4-.9a7.5 7.5 0 0 0 2.6 1.5l.4 2.5h4l.4-2.5a7.5 7.5 0 0 0 2.6-1.5l2.4.9 2-3.4z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
   menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
   ear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9a5 5 0 0 1 10 0c0 3-3 3.5-3 6.5a2.5 2.5 0 0 1-5 .5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1.2-1.4 1.6-1.4 2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
@@ -108,7 +109,8 @@ function renderLines(host, spec) {
   if (spec.time) probe.addTimeSignature(spec.time);
   const extra = probe.getNoteStartX() - new VF.Stave(0, 0, 300).getNoteStartX();
   const minMW = spec.minMW * (Wfull < 440 ? 0.62 : 1);
-  const mpl = clamp(Math.floor((avail - extra) / minMW), 1, spec.maxMPL || 4);
+  let mpl = clamp(Math.floor((avail - extra) / minMW), 1, spec.maxMPL || 4);
+  mpl = Math.ceil(spec.measures.length / Math.ceil(spec.measures.length / mpl));   // even lines: 2+2, not 3+1
   const lines = [];
   for (let i = 0; i < spec.measures.length; i += mpl) lines.push(spec.measures.slice(i, i + mpl));
   const rowH = spec.rowH || 130;
@@ -299,23 +301,18 @@ function pitchKey(e, ex) {
   return false;
 }
 
-/* compact note-entry strip: ◀ ▲ ▼ ▶ | ♭ ♮ ♯ | ⌫
-   ♭ and ♯ step the accidental (so pressing ♯ twice gives a double sharp) */
-function pitchToolbar(ex, opts = {}) {
+/* the small tools shown in the dock for the selected note: ▲ ▼ · ♭ ♮ ♯ · ✕
+   ♭ and ♯ step the accidental, so pressing ♯ twice gives a double sharp */
+function noteTools(ex, opts = {}) {
   const b = (html, titleKey, fn, cls = '') => el('button', { class: 'tb ' + cls, type: 'button', title: t(titleKey), 'aria-label': t(titleKey), html, onclick: fn });
   const acc = (sym, titleKey, fn) => b(`<span class="acc">${sym}</span>`, titleKey, fn, 'tb-acc');
-  return el('div', { class: 'pitchbar', role: 'toolbar', 'aria-label': t('tbLabel') },
-    opts.nav === false ? null : b(ICON.left, 'tbPrev', () => ex.cmd('left')),
+  return el('div', { class: 'tools', role: 'toolbar', 'aria-label': t('tbLabel') },
     b(ICON.up, 'tbUp', () => ex.cmd('up')),
     b(ICON.down, 'tbDown', () => ex.cmd('down')),
-    opts.nav === false ? null : b(ICON.right, 'tbNext', () => ex.cmd('right')),
-    el('span', { class: 'pb-sep', 'aria-hidden': 'true' }),
     acc('♭', 'tbFlat', () => ex.cmd('accDown')),
     acc('♮', 'tbNat', () => ex.cmd('acc', 0)),
     acc('♯', 'tbSharp', () => ex.cmd('accUp')),
-    el('span', { class: 'pb-sep', 'aria-hidden': 'true' }),
-    b(ICON.del, 'tbClear', () => ex.cmd('clear'))
-  );
+    b(ICON.del, opts.clearKey || 'tbClear', () => ex.cmd('clear'), 'tb-del'));
 }
 
 /* Keep a score in sync with its container width */

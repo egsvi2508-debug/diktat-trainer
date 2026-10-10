@@ -385,11 +385,9 @@ const ExHar = {
         toggleControl('har-ss', 'rowStufe', S.St, v => { S.St = v; this.save(); this.renderSolution(); }),
         toggleControl('har-sg', 'rowGB', S.G, v => { S.G = v; this.save(); this.renderSolution(); }))
     );
-    this.playBtn = playButton('playProgression', () => this.events(false), { primary: true });
-    this.cadBtn = playButton('playCadence', () => cadenceEvents(this.task.key));
+    this.playBtn = playButton('listen', () => this.events(false), { primary: true });
     this.bassBtn = playButton('playBassOnly', () => this.events(true));
-    P.transport.append(this.playBtn, this.cadBtn, this.bassBtn);
-    editRow(this, P);
+    mainControls(this, P, this.playBtn);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     watchWidth(P.solHost, () => this.renderSolution());
@@ -422,6 +420,7 @@ const ExHar = {
     return ev;
   },
 
+  hasInput() { return this.ans.slice(1).some(Boolean); },
   isLocked() { return this.checked; },
   moveCursor(d) { this.cursor = clamp(this.cursor + d, 1, this.ans.length - 1); this.render(); },
   getNote(i) { return this.ans[i]; },
@@ -456,7 +455,7 @@ const ExHar = {
 
   check() {
     if (this.checked) return;
-    if (!this.ans.slice(1).some(Boolean)) { setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('harEmpty'))}</span>`); return; }
+    if (!this.hasInput()) { this.reveal(); return; }
     let ok = 0, oct = 0;
     const marks = this.task.notes.map((ch, i) => {
       if (i === 0) return 'given';
@@ -471,14 +470,14 @@ const ExHar = {
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     let msg = t('harRes', { ok, n });
     if (oct) msg += ' ' + t('harOct', { n: oct });
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`, this.bassBtn);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
   reveal() {
     if (this.checked) return;
     this.checked = true;
-    setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
+    setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`, this.bassBtn);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
@@ -486,10 +485,9 @@ const ExHar = {
   render() {
     if (!this.P || !this.task) return;
     const P = this.P, C = notaColors(), task = this.task;
-    P.taskbar.innerHTML = '';
-    P.taskbar.append(chip(t('keyChip', { k: keyName(task.key) }), 'chip-strong'),
-      chip(t('harFirstBass', { n: noteName(task.notes[0][0]) })),
-      chip(t('harNChords', { n: task.notes.length }), 'chip-muted'), statChip('har'));
+    P.info.replaceChildren(
+      soundChip(keyName(task.key), () => cadenceEvents(task.key)),
+      soundChip(t('harFirstBass', { n: noteName(task.notes[0][0]) }), () => [{ t: 0, midi: Note.midi(task.notes[0][0]), dur: 1.6 }]));
     const marks = this.res ? this.res.marks : null;
     const measures = [];
     for (let m = 0; m < Math.ceil(this.ans.length / 2); m++) {
@@ -506,8 +504,13 @@ const ExHar = {
       clef: 'bass', key: task.key, time: null, beats: 4, beatValue: 4, measures,
       minMW: 112, maxMPL: 4, sel: this.checked ? null : 'c' + this.cursor, range: this.diaRange()
     });
-    this.bassBtn.hidden = !this.checked;
-    syncEditRow(this);
+    if (this.checked) dockHide(P);
+    else {
+      const lbl = t('dockChordN', { i: this.cursor + 1, n: this.ans.length });
+      if (this.ans[this.cursor]) dockNote(P, this, lbl, this.ans[this.cursor]);
+      else dockHint(P, lbl, t('dockTapBass'));
+    }
+    syncControls(this);
   },
   renderSolution() {
     if (!this.P || !this.checked || this.P.solWrap.hidden) return;

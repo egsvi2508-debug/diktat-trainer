@@ -1,6 +1,9 @@
 'use strict';
 /* ============================================================
-   UI building blocks shared by the exercise panels
+   UI building blocks. Every exercise screen has the same shape:
+     one instruction line · info chips (tap to hear) · staff with a small
+     editing dock that appears only when needed · two big buttons
+   All options live in the single ⚙ sheet (see app.js).
    ============================================================ */
 function segControl(id, labelKey, options, value, onChange) {
   const lab = el('span', { class: 'field-lbl', id: id + '-l' }, t(labelKey));
@@ -39,74 +42,87 @@ function iconBtn(icon, titleKey, onClick, cls = '') {
   return el('button', { type: 'button', class: 'icon-btn ' + cls, title: t(titleKey), 'aria-label': t(titleKey), html: icon, onclick: onClick });
 }
 function chip(text, cls = '') { return el('span', { class: 'chip ' + cls }, text); }
+/* an info chip you can tap to hear something (key → cadence, first note → that note) */
+function soundChip(text, getEvents) {
+  const b = el('button', { type: 'button', class: 'chip chip-sound', title: t('tapToHear') },
+    el('span', {}, text), el('span', { class: 'ico', html: ICON.speaker }));
+  b.addEventListener('click', () => { const ev = getEvents(); if (ev && ev.length) Sound.play(ev); });
+  return b;
+}
 
 /* modal sheet (bottom sheet on phones, card on desktop) */
 function makeDialog(title) {
   const body = el('div', { class: 'dlg-body' });
+  const h = el('h3', {}, title);
   const d = el('dialog', { class: 'dlg' },
-    el('div', { class: 'dlg-head' }, el('h3', {}, title), iconBtn(ICON.cross, 'close', () => d.close())),
+    el('div', { class: 'dlg-head' }, h, iconBtn(ICON.cross, 'close', () => d.close())),
     body,
     el('div', { class: 'dlg-foot' }, btn('done', ICON.check, () => d.close(), 'btn-ink')));
   d.addEventListener('click', e => { if (e.target === d) d.close(); });
   document.body.append(d);
-  return { d, body, open: () => { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); } };
-}
-
-/* one button that is "Check" before and "Next" after checking */
-function actionButton(ex) {
-  const b = btn('check', ICON.check, () => { if (ex.checked) ex.newTask(true); else ex.check(); }, 'btn-ink btn-action');
-  b.sync = checked => {
-    $('.lbl', b).textContent = t(checked ? 'nextTask' : 'check');
-    $('.ico', b).innerHTML = checked ? ICON.next : ICON.check;
-    b.classList.toggle('btn-play', checked);
-    b.classList.toggle('btn-ink', !checked);
-  };
-  return b;
+  return { d, body, h, open: () => { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); } };
 }
 
 function panelShell(ex) {
   const root = ex.root;
   root.innerHTML = '';
-  if (ex.dlg) ex.dlg.d.remove();
-  ex.dlg = makeDialog(t('settings') + ' · ' + t(ex.titleKey));
   const P = {
-    settingsBody: ex.dlg.body,
-    taskbar: el('div', { class: 'taskbar' }),
+    hint: el('p', { class: 'hint-line' }, t(ex.descKey)),
+    info: el('div', { class: 'info' }),
     score: el('div', { class: 'score', tabindex: '0', 'aria-label': t('scoreLabel') }),
-    transport: el('div', { class: 'row transport' }),
-    edit: el('div', { class: 'row editrow' }),
+    dock: el('div', { class: 'dock' }),
+    controls: el('div', { class: 'controls' }),
     feedback: el('div', { class: 'feedback', role: 'status', hidden: true }),
-    solHost: el('div', { class: 'score' })
+    solHost: el('div', { class: 'score' }),
+    settingsBody: el('div', { class: 'set-list' })
   };
-  P.head = el('div', { class: 'panel-head' },
-    el('span', { class: 'ph-num', 'aria-hidden': 'true' }, ex.no),
-    el('div', { class: 'ph-text' }, el('h2', {}, t(ex.titleKey)), el('p', { class: 'ph-desc' }, t(ex.descKey))),
-    iconBtn(ICON.sliders, 'settings', () => ex.dlg.open(), 'icon-btn-lg'));
-  P.sheet = el('div', { class: 'sheet' }, P.score);
+  P.sheet = el('div', { class: 'sheet' }, P.score, P.dock);
   P.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, P.solHost));
-  root.append(P.head, P.taskbar, P.sheet, P.transport, P.edit, P.feedback, P.solWrap);
+  root.append(P.hint, P.info, P.sheet, P.controls, P.feedback, P.solWrap);
   return P;
 }
-/* the editing row: pitch strip on the left, "show solution" + Check/Next on the right */
-function editRow(ex, P, toolbarOpts) {
-  ex.tb = toolbarOpts === false ? null : pitchToolbar(ex, toolbarOpts);
-  ex.solBtn = iconBtn(ICON.eye, 'showSolution', () => ex.reveal(), 'icon-btn-lg');
-  ex.actBtn = actionButton(ex);
-  P.edit.append(ex.tb || '', el('span', { class: 'spacer' }), ex.solBtn, ex.actBtn);
+
+/* the two big buttons: Listen + one smart button (Check · Show solution · Next) */
+function mainControls(ex, P, playBtn) {
+  const act = el('button', { type: 'button', class: 'btn btn-big btn-ink btn-action' }, el('span', { class: 'ico' }), el('span', { class: 'lbl' }));
+  act.addEventListener('click', () => {
+    if (ex.checked) ex.newTask(true);
+    else if (ex.hasInput()) ex.check();
+    else ex.reveal();
+  });
+  ex.actBtn = act;
+  playBtn.classList.add('btn-big');
+  P.controls.append(playBtn, act);
 }
-function syncEditRow(ex) {
-  ex.actBtn.sync(ex.checked);
-  ex.solBtn.hidden = ex.checked;
-  if (ex.tb) ex.tb.classList.toggle('dim', ex.checked);
+function syncControls(ex) {
+  const b = ex.actBtn;
+  if (!b) return;
+  const mode = ex.checked ? 'next' : ex.hasInput() ? 'check' : 'reveal';
+  $('.lbl', b).textContent = t(mode === 'next' ? 'nextTask' : mode === 'check' ? 'check' : 'showSolution');
+  $('.ico', b).innerHTML = mode === 'next' ? ICON.next : mode === 'check' ? ICON.check : ICON.eye;
+  b.classList.toggle('btn-play', mode === 'next');
+  b.classList.toggle('btn-ink', mode === 'check');
+  b.classList.toggle('btn-sec', mode === 'reveal');
 }
-function statChip(id) {
-  const s = store.get('stats:' + id, { n: 0, sum: 0 });
-  if (!s.n) return '';
-  return el('span', { class: 'chip chip-muted', title: statText(id) }, t('statChip', { avg: Math.round(s.sum / s.n), n: s.n }));
+
+/* the editing dock under the staff */
+function dockHide(P) { P.dock.replaceChildren(); P.dock.hidden = true; }
+function dockHint(P, label, text) {
+  P.dock.hidden = false;
+  P.dock.replaceChildren(label ? el('span', { class: 'dock-lbl' }, label) : '', el('span', { class: 'dock-hint' }, text));
 }
-function setFeedback(box, kind, html) {
+function dockNote(P, ex, label, note, opts) {
+  P.dock.hidden = false;
+  P.dock.replaceChildren(
+    el('span', { class: 'dock-lbl' }, label),
+    el('span', { class: 'dock-name' }, note ? noteName(note) : '–'),
+    noteTools(ex, opts));
+}
+
+function setFeedback(box, kind, html, ...extra) {
   box.className = 'feedback fb-' + kind;
   box.innerHTML = html || '';
+  extra.forEach(x => { if (x) box.append(x); });
   box.hidden = !html;
 }
 function fbIcon(kind) { return `<span class="fb-ico">${kind === 'ok' ? ICON.check : kind === 'bad' ? ICON.cross : ICON.ear}</span>`; }

@@ -97,10 +97,9 @@ const ExLex = {
   build() {
     const root = this.root;
     root.innerHTML = '';
-    if (this.dlg) this.dlg.d.remove();
-    this.dlg = makeDialog(t('settings') + ' · ' + t(this.titleKey));
+    this.P = { settingsBody: el('div', { class: 'set-list' }) };
     const preset = ids => { this.sel = new Set(ids); this.syncChecks(); this.saveSel(); };
-    this.dlg.body.append(
+    this.P.settingsBody.append(
       el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('lexPresets')),
         el('div', { class: 'row' },
           btn('lexBasic', null, () => preset(RHY.BASIC)),
@@ -108,12 +107,8 @@ const ExLex = {
           btn('lexNone', null, () => preset(['6'])))),
       sliderControl('lex-tempo', 'tempoDQ', 36, 84, 2, ExMel.S.tempo, v => '♩. = ' + v, v => { ExMel.S.tempo = v; ExMel.save(); })
     );
-    const head = el('div', { class: 'panel-head' },
-      el('span', { class: 'ph-num', 'aria-hidden': 'true' }, this.no),
-      el('div', { class: 'ph-text' }, el('h2', {}, t(this.titleKey)), el('p', { class: 'ph-desc' }, t(this.descKey))),
-      iconBtn(ICON.sliders, 'settings', () => this.dlg.open(), 'icon-btn-lg'));
-    this.countEl = el('span', { class: 'chip chip-accent' });
-    this.quizBtn = btn('lexQuizStart', ICON.ear, () => this.toggleQuiz(), 'btn-play');
+    this.countEl = el('span', { class: 'lex-count' });
+    this.quizBtn = btn('lexQuizStart', ICON.ear, () => this.toggleQuiz(), 'btn-play btn-big');
     this.quizBar = el('div', { class: 'quizbar', hidden: true });
     const groups = el('div', { class: 'lex-groups' });
     for (let n = 1; n <= 6; n++) {
@@ -124,10 +119,9 @@ const ExLex = {
         el('h3', {}, t(n === 1 ? 'lexOneNote' : 'lexNNotes', { n }), el('span', { class: 'lex-sec-n' }, String(pats.length))),
         grid));
     }
-    root.append(head,
-      el('div', { class: 'row lex-bar' }, this.quizBtn, this.countEl, el('span', { class: 'lex-tip' }, t('lexTapTip'))),
-      this.quizBar, groups,
-      el('p', { class: 'legend' }, el('span', { class: 'tier-dot t0' }), t('tier0'), el('span', { class: 'tier-dot t1' }), t('tier1'), el('span', { class: 'tier-dot t2' }), t('tier2')));
+    root.append(el('p', { class: 'hint-line' }, t(this.descKey)),
+      el('div', { class: 'row lex-bar' }, this.quizBtn, this.countEl),
+      this.quizBar, groups);
     this.updateCount();
   },
   card(p) {
@@ -140,7 +134,7 @@ const ExLex = {
       el('span', { class: 'rc-check', html: ICON.check, 'aria-hidden': 'true' }),
       el('div', { class: 'rc-top' }, nota, play),
       onsetGrid(p.durs),
-      el('div', { class: 'rc-name' }, el('span', { class: 'tier-dot t' + p.tier, title: t('tier' + p.tier) }), patternName(p)));
+      el('div', { class: 'rc-name' }, patternName(p)));
     const act = () => {
       if (this.quiz) { this.answerQuiz(p.id, card); return; }
       if (p.id === '6') return;
@@ -159,6 +153,7 @@ const ExLex = {
     });
   },
   updateCount() { if (this.countEl) this.countEl.textContent = t('lexCount', { n: this.selected().length, total: RHY.list.length }); },
+  render() {},
 
   toggleQuiz() {
     if (this.quiz) { this.quiz = null; this.quizBar.hidden = true; this.root.classList.remove('quizzing'); $('.lbl', this.quizBtn).textContent = t('lexQuizStart'); return; }
@@ -186,8 +181,7 @@ const ExLex = {
       el('span', { class: 'qz-q' }, msg || t('lexQuizQ')),
       el('span', { class: 'chip ' + (kind === 'ok' ? 'chip-ok' : kind === 'bad' ? 'chip-bad' : 'chip-muted') }, t('lexQuizScore', { ok: q.ok, n: q.n })),
       el('span', { class: 'spacer' }),
-      btn('again', ICON.play, () => this.playQuiz()),
-      btn('nextTask', ICON.next, () => this.nextQuiz(), q.answered ? 'btn-ink' : 'btn-sec'));
+      q.answered ? btn('nextTask', ICON.next, () => this.nextQuiz(), 'btn-play') : btn('again', ICON.play, () => this.playQuiz(), 'btn-sec'));
   },
   answerQuiz(id, card) {
     const q = this.quiz;
@@ -231,15 +225,10 @@ const ExMel = {
         toggleControl('mel-metro', 'metroOn', S.metro, v => { S.metro = v; this.save(); }),
         toggleControl('mel-allpats', 'palAll', S.allPats, v => { S.allPats = v; this.save(); this.renderPalette(); }))
     );
-    this.playBtn = playButton('playDictation', () => this.events(this.task.beats, true), { primary: true });
-    this.cadBtn = playButton('playCadence', () => cadenceEvents(this.task.key));
-    this.startBtn = playButton('playStart', () => [{ t: 0, midi: Note.midi(this.task.start), dur: 1.6 }]);
+    this.playBtn = playButton('listen', () => this.events(this.task.beats, true), { primary: true });
     this.yoursBtn = playButton('playYours', () => this.events(this.ans.filter(b => b.pat), false));
-    this.solPlayBtn = playButton('playSolution', () => this.events(this.task.beats, false));
-    P.transport.append(this.playBtn, this.cadBtn, this.startBtn, this.yoursBtn, this.solPlayBtn);
-    this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel'), title: t('palLabel') });
-    P.edit.before(this.palette);
-    editRow(this, P);
+    this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel') });
+    mainControls(this, P, this.playBtn);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     watchWidth(P.solHost, () => this.renderSolution());
@@ -286,6 +275,8 @@ const ExMel = {
     });
     return ev;
   },
+
+  hasInput() { return this.ans.some(b => b.pat); },
 
   /* positions = notes plus empty beats, in order */
   positions() {
@@ -381,7 +372,7 @@ const ExMel = {
 
   check() {
     if (this.checked) return;
-    if (this.ans.every(b => !b.pat)) { setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('melEmpty'))}</span>`); return; }
+    if (!this.hasInput()) { this.reveal(); return; }
     const ronly = this.S.rhythmOnly;
     let rOk = 0, pOk = 0, pTot = 0;
     const beats = this.task.beats.map((sb, b) => {
@@ -400,14 +391,14 @@ const ExMel = {
     statAdd('mel', pct);
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     const line = ronly ? t('melResR', { r: rOk, nb }) : t('melRes', { r: rOk, nb, p: pOk, pt: pTot });
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(line)}</span>`);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(line)}</span>`, this.yoursBtn);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
   reveal() {
     if (this.checked) return;
     this.checked = true;
-    setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
+    setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`, this.hasInput() ? this.yoursBtn : null);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
@@ -434,10 +425,10 @@ const ExMel = {
   render() {
     if (!this.P || !this.task) return;
     const P = this.P, C = notaColors(), S = this.S, task = this.task;
-    P.taskbar.innerHTML = '';
-    if (!S.rhythmOnly) P.taskbar.append(chip(t('keyChip', { k: keyName(task.key) }), 'chip-strong'), chip(t('startChip', { n: noteName(task.start) })));
-    else P.taskbar.append(chip(t('rhythmOnly'), 'chip-strong'));
-    P.taskbar.append(chip('6/8 · ' + t('barsChip', { n: S.bars }), 'chip-muted'), statChip('mel'));
+    if (!S.rhythmOnly) P.info.replaceChildren(
+      soundChip(keyName(task.key), () => cadenceEvents(task.key)),
+      soundChip(t('startChip', { n: noteName(task.start) }), () => [{ t: 0, midi: Note.midi(task.start), dur: 1.6 }]));
+    else P.info.replaceChildren(chip(t('rhythmOnly'), 'chip-strong'));
     const res = this.res;
     const measures = this.measuresFor(this.ans, (b, k) => {
       if (!res) return k < 0 ? null : { color: C.user };
@@ -450,12 +441,13 @@ const ExMel = {
       clef: 'treble', key: S.rhythmOnly ? null : task.key, time: '6/8', beats: 6, beatValue: 8,
       measures, minMW: 150, maxMPL: 4, sel, range: this.diaRange()
     });
-    syncEditRow(this);
-    this.palette.classList.toggle('dim', this.checked);
-    this.tb.hidden = S.rhythmOnly;
-    this.startBtn.hidden = S.rhythmOnly || this.checked;
-    this.cadBtn.hidden = S.rhythmOnly || this.checked;
-    this.yoursBtn.hidden = this.solPlayBtn.hidden = !this.checked;
+    const where = t('dockBeat', { bar: Math.floor(this.cur.b / 2) + 1, beat: this.cur.b % 2 + 1 });
+    if (this.checked) dockHide(P);
+    else if (this.cur.k < 0 || S.rhythmOnly) {
+      dockHint(P, where, t(this.ans[this.cur.b].pat ? 'dockRhythmChange' : 'dockRhythm'));
+      P.dock.append(this.palette);
+    } else dockNote(P, this, where + ' · ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
+    syncControls(this);
   },
   renderSolution() {
     if (!this.P || !this.checked || this.P.solWrap.hidden) return;

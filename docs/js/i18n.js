@@ -2,6 +2,12 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    listen: 'Anhören', listenLeft: 'Anhören · noch {n}×', tapToHear: 'Antippen zum Anhören', general: 'Allgemein',
+    dockYourNote: 'Dein Ton', intDockHint: 'Tipp ins Notensystem, wo der zweite Ton steht.',
+    dockBeat: 'Takt {bar}, Schlag {beat}', dockRhythm: 'Welcher Rhythmus?', dockRhythmChange: 'Rhythmus ändern:',
+    tbClearGroup: 'Rhythmusgruppe löschen', dockNoteN: 'Ton {i} von {n}', dockTapStaff: 'Tipp ins System, um den Ton zu setzen.',
+    dockChordN: 'Akkord {i} von {n}', dockTapBass: 'Tipp ins System, um den Basston zu setzen.',
+
     menu: 'Menü', close: 'Schließen', done: 'Fertig', options: 'Optionen', sound: 'Klang',
     countIn: 'Einzählen (ein Takt Metronom)', lexPresets: 'Auswahl', lexTapTip: 'Karte antippen = an/aus · ▶ = anhören',
     loadingPiano: 'Klavier lädt …', statChip: 'Ø {avg} % · {n}×',
@@ -35,7 +41,7 @@ const I18N = {
     keyHelpMel: 'Ziffern 1–9 wählen eine Rhythmusgruppe',
 
     intTitle: 'Intervalle',
-    intDesc: 'Ein Ton ist gegeben – hör das Intervall und notiere den zweiten Ton.',
+    intDesc: 'Hör zu und notiere den zweiten Ton – tipp dafür ins Notensystem.',
     intDir: 'Richtung', intDirAlt: 'abwechselnd ↑↓', intDirUp: 'nur aufwärts', intDirDown: 'nur abwärts',
     intRange: 'Intervalle', intSimple: 'bis zur Oktave', intCompound: 'über die Oktave (bis zur Doppeloktave)',
     intPlayMode: 'Wiedergabe', intMel: 'nacheinander', intHarm: 'zusammen',
@@ -50,18 +56,18 @@ const I18N = {
     colGiven: 'gegeben', colYours: 'deine', colSolution: 'Lösung',
 
     lexTitle: 'Rhythmus-Lexikon 6/8',
-    lexDesc: 'Alle 30 Füllungen einer 3-Achtel-Gruppe. Tipp eine Karte an, um sie fürs Diktat an- oder abzuwählen.',
+    lexDesc: 'Alle 30 Rhythmusgruppen eines 6/8-Schlags. Karte antippen = im Diktat verwenden · ▶ = anhören.',
     lexBasic: 'Grundauswahl', lexAll: 'Alle', lexNone: 'Keine',
     lexQuizStart: 'Hörquiz starten', lexQuizStop: 'Quiz beenden',
     lexOneNote: '1 Note', lexNNotes: '{n} Noten',
     tier0: 'Grundform', tier1: 'häufig', tier2: 'selten',
     lexPlay: 'Anhören', lexAlways: 'immer dabei (Schlussnote)', lexUse: 'im Diktat',
-    lexCount: '{n} von {total} Gruppen aktiv',
+    lexCount: '{n} von {total} aktiv',
     lexQuizQ: 'Welche Gruppe hörst du? Tipp auf die Karte.', lexQuizScore: '{ok} / {n} richtig',
     lexQuizOk: 'Richtig!', lexQuizBad: 'Leider nein – es war: {name}',
 
     melTitle: 'Rhythmus- & Melodiediktat',
-    melDesc: '6/8-Melodie aus deinen Rhythmusgruppen: erst Rhythmus wählen, dann Töne setzen.',
+    melDesc: 'Hör zu, wähle für jeden Schlag den Rhythmus und setz dann die Töne.',
     rhythmOnly: 'Nur Rhythmus', metroOn: 'Metronom während des Diktats',
     palLabel: 'Rhythmusgruppe für den markierten Schlag', palAll: 'alle 30 zeigen',
     melPickRhythm: 'Dieser Schlag ist noch leer – wähl zuerst unten eine Rhythmusgruppe.',
@@ -70,8 +76,8 @@ const I18N = {
     melRes: 'Rhythmus: {r}/{nb} Gruppen · Töne: {p}/{pt} richtig',
 
     secTitle: 'Diktat im Flug: Sekunden', terTitle: 'Diktat im Flug: Terzen',
-    secDesc: 'Nur kleine und große Sekunden, auf und ab – langsam gespielt, dreimal hörbar.',
-    terDesc: 'Nur kleine und große Terzen, auf und ab – langsam gespielt, dreimal hörbar.',
+    secDesc: 'Nur Sekunden. Schreib beim Hören auf Papier mit (3×), dann eintragen oder Lösung zeigen.',
+    terDesc: 'Nur Terzen. Schreib beim Hören auf Papier mit (3×), dann eintragen oder Lösung zeigen.',
     flMode: 'Tonvorrat', flFree: 'frei (chromatisch)', flKey: 'in einer Tonart',
     clefLbl: 'Schlüssel', clefTreble: 'Violinschlüssel', clefBass: 'Bassschlüssel',
     flLimit: 'Nur 3× anhören (wie im Kurs)',
@@ -81,7 +87,7 @@ const I18N = {
     flFreeChip: 'frei, ohne Tonart', playsLeft: 'noch {n}× hören',
 
     harTitle: 'Harmoniefolge: Bass hören',
-    harDesc: 'Vierstimmige Kadenzen, der Bass klingt lauter. Notier die Basslinie.',
+    harDesc: 'Hör die Akkordfolge – der Bass ist lauter – und notiere die Basstöne.',
     harN: 'Akkorde', harChords: 'Akkordvorrat', harInv: 'Umkehrungen (6, 6/4)', harSev: 'Dominantseptakkorde', harDD: 'Doppeldominante',
     harDur: 'Dauer pro Akkord', harBoost: 'Bass lauter um', harShow: 'Analyse in der Lösung',
     rowFunc: 'Funktionen', rowStufe: 'Stufen', rowGB: 'Generalbass', rowFuncShort: 'Funkt.', rowStufeShort: 'Stufe',
@@ -90,6 +96,12 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    listen: 'Listen', listenLeft: 'Listen · {n} left', tapToHear: 'Tap to hear', general: 'General',
+    dockYourNote: 'Your note', intDockHint: 'Tap the staff where the second note goes.',
+    dockBeat: 'Bar {bar}, beat {beat}', dockRhythm: 'Which rhythm?', dockRhythmChange: 'Change rhythm:',
+    tbClearGroup: 'Delete rhythm group', dockNoteN: 'Note {i} of {n}', dockTapStaff: 'Tap the staff to place the note.',
+    dockChordN: 'Chord {i} of {n}', dockTapBass: 'Tap the staff to place the bass note.',
+
     menu: 'Menu', close: 'Close', done: 'Done', options: 'Options', sound: 'Sound',
     countIn: 'Count-in (one bar of metronome)', lexPresets: 'Selection', lexTapTip: 'tap a card = on/off · ▶ = listen',
     loadingPiano: 'Loading piano …', statChip: 'avg {avg} % · {n}×',
@@ -123,7 +135,7 @@ const I18N = {
     keyHelpMel: 'digits 1–9 pick a rhythm group',
 
     intTitle: 'Intervals',
-    intDesc: 'One note is given – listen to the interval and notate the second note.',
+    intDesc: 'Listen and notate the second note – tap the staff to write it.',
     intDir: 'Direction', intDirAlt: 'alternating ↑↓', intDirUp: 'up only', intDirDown: 'down only',
     intRange: 'Intervals', intSimple: 'up to the octave', intCompound: 'beyond the octave (up to two octaves)',
     intPlayMode: 'Playback', intMel: 'melodic', intHarm: 'harmonic',
@@ -138,18 +150,18 @@ const I18N = {
     colGiven: 'given', colYours: 'yours', colSolution: 'solution',
 
     lexTitle: 'Rhythm lexicon 6/8',
-    lexDesc: 'All 30 ways to fill a group of three eighths. Tap a card to use it in the dictation or not.',
+    lexDesc: 'All 30 rhythm groups of one 6/8 beat. Tap a card = use it in the dictation · ▶ = listen.',
     lexBasic: 'Basic set', lexAll: 'All', lexNone: 'None',
     lexQuizStart: 'Start listening quiz', lexQuizStop: 'End quiz',
     lexOneNote: '1 note', lexNNotes: '{n} notes',
     tier0: 'basic', tier1: 'common', tier2: 'rare',
     lexPlay: 'Listen', lexAlways: 'always on (final note)', lexUse: 'use in dictation',
-    lexCount: '{n} of {total} groups active',
+    lexCount: '{n} of {total} active',
     lexQuizQ: 'Which group do you hear? Tap its card.', lexQuizScore: '{ok} / {n} correct',
     lexQuizOk: 'Correct!', lexQuizBad: 'Not this one – it was: {name}',
 
     melTitle: 'Rhythm & melody dictation',
-    melDesc: 'A 6/8 melody built from your rhythm groups: pick the rhythm first, then set the pitches.',
+    melDesc: 'Listen, choose the rhythm for each beat, then set the pitches.',
     rhythmOnly: 'Rhythm only', metroOn: 'Metronome during dictation',
     palLabel: 'Rhythm group for the selected beat', palAll: 'show all 30',
     melPickRhythm: 'This beat is still empty – pick a rhythm group below first.',
@@ -158,8 +170,8 @@ const I18N = {
     melRes: 'Rhythm: {r}/{nb} groups · Pitches: {p}/{pt} correct',
 
     secTitle: 'Dictation on the fly: seconds', terTitle: 'Dictation on the fly: thirds',
-    secDesc: 'Only minor and major seconds, up and down – played slowly, three listens.',
-    terDesc: 'Only minor and major thirds, up and down – played slowly, three listens.',
+    secDesc: 'Only seconds. Write along on paper while listening (3×), then enter it or show the solution.',
+    terDesc: 'Only thirds. Write along on paper while listening (3×), then enter it or show the solution.',
     flMode: 'Pitch set', flFree: 'free (chromatic)', flKey: 'within a key',
     clefLbl: 'Clef', clefTreble: 'treble', clefBass: 'bass',
     flLimit: 'Listen only 3 times (as in class)',
@@ -169,7 +181,7 @@ const I18N = {
     flFreeChip: 'free, no key', playsLeft: '{n} plays left',
 
     harTitle: 'Progressions: find the bass',
-    harDesc: 'Four-part progressions with a louder bass. Notate the bass line.',
+    harDesc: 'Listen to the progression – the bass is louder – and notate the bass notes.',
     harN: 'Chords', harChords: 'Chord vocabulary', harInv: 'Inversions (6, 6/4)', harSev: 'Dominant sevenths', harDD: 'Secondary dominant (DD)',
     harDur: 'Duration per chord', harBoost: 'Bass louder by', harShow: 'Analysis in the solution',
     rowFunc: 'Functions', rowStufe: 'Scale degrees', rowGB: 'Figured bass', rowFuncShort: 'Func.', rowStufeShort: 'Deg.',

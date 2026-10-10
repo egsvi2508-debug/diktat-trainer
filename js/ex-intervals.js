@@ -19,9 +19,8 @@ const ExInt = {
         toggleControl('int-comp', 'intCompound', S.compound, (v, inp) => { if (!v && !S.simple) { inp.checked = true; return; } S.compound = v; this.save(); })),
       segControl('int-play', 'intPlayMode', [['mel', t('intMel')], ['harm', t('intHarm')]], S.play, v => { S.play = v; this.save(); })
     );
-    this.playBtn = playButton('intPlay', () => this.events(), { primary: true });
-    P.transport.append(this.playBtn, playButton('intGivenOnly', () => [{ t: 0, midi: Note.midi(this.task.given), dur: 1.6 }]));
-    editRow(this, P, { nav: false });
+    this.playBtn = playButton('listen', () => this.events(), { primary: true });
+    mainControls(this, P, this.playBtn);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     if (!this.task) this.newTask(false); else this.render();
@@ -69,6 +68,8 @@ const ExInt = {
     return [{ t: 0, midi: g, dur: 1.25, vel: 0.72 }, { t: 1.4, midi: x, dur: 1.9, vel: 0.72 }];
   },
 
+  hasInput() { return !!this.ans; },
+
   /* sequence-editor interface (one slot) */
   isLocked() { return this.checked; },
   moveCursor() {},
@@ -93,7 +94,7 @@ const ExInt = {
 
   check() {
     if (this.checked) return;
-    if (!this.ans) { setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('intNoAns'))}</span>`); return; }
+    if (!this.ans) { this.reveal(); return; }
     const { given, target, up, iv } = this.task;
     const ok = Note.sameMidi(this.ans, target);
     const exact = Note.eq(this.ans, target);
@@ -121,13 +122,9 @@ const ExInt = {
     if (!this.P || !this.task) return;
     const P = this.P, C = notaColors();
     const { given, target, up } = this.task;
-    P.taskbar.innerHTML = '';
-    P.taskbar.append(
+    P.info.replaceChildren(
       chip((up ? '↑ ' : '↓ ') + t(up ? 'intFindUpper' : 'intFindLower'), 'chip-strong'),
-      chip(t('intGiven', { n: noteName(given) })),
-      chip(t('taskN', { n: this.count }), 'chip-muted'),
-      statChip('int')
-    );
+      soundChip(t('intGiven', { n: noteName(given) }), () => [{ t: 0, midi: Note.midi(given), dur: 1.6 }]));
     const cols = [{ note: given, color: C.ink, slot: 'given', locked: true, label: t('colGiven') }];
     if (!this.checked) cols.push({ note: this.ans, color: C.user, slot: 'ans', label: t('colYours') });
     else if (this.result.shown) {
@@ -138,7 +135,10 @@ const ExInt = {
       if (!this.result.exact) cols.push({ note: target, color: C.ok, slot: 'sol', locked: true, label: t('colSolution') });
     }
     this.hit = renderGrand(P.score, cols, { sel: this.checked ? null : 'ans' });
-    syncEditRow(this);
+    if (this.checked) dockHide(P);
+    else if (this.ans) dockNote(P, this, t('dockYourNote'), this.ans);
+    else dockHint(P, '', t('intDockHint'));
+    syncControls(this);
   },
 
   onKey(e) {
