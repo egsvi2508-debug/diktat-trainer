@@ -1,0 +1,4 @@
+.build-cache/
+.claude/
+Diktat-Trainer.html
+__pycache__/
