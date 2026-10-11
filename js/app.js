@@ -207,10 +207,15 @@ const App = {
     if (!it) this.renderHome();
     else {
       if (!it.built) { it.built = true; it.ex.build(); }
-      else {
+      else if (it.ex.stale) {
+        it.ex.stale = false;
+        it.ex.newTask();
+        setFeedback(it.ex.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('newWithGroups'))}</span>`);
+      } else {
         if (it.ex.render) it.ex.render();
         if (it.ex.renderSolution) it.ex.renderSolution();
       }
+      if (it.ex.stale) it.ex.stale = false;
       store.set('tab', it.hash);
       store.set('last:' + it.nav, it.hash);
       if (it.ex === ExMel && !store.get('howMelHide', false)) ExMel.showHow();

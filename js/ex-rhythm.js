@@ -100,6 +100,8 @@ const ExLex = {
     store.set('lex.sel', [...this.sel]);
     this.updateCount();
     if (ExMel.P) ExMel.renderPalette();
+    // the dictation must only use the chosen groups: make a new one (built when you return to it)
+    if (ExMel.task) ExMel.stale = true;
   },
 
   build() {

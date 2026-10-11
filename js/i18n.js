@@ -2,6 +2,7 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    newWithGroups: 'Neue Aufgabe – nur mit den Rhythmusgruppen, die du im Lexikon gewählt hast.',
     howShort: 'Anleitung', howOpen: 'Anleitung anzeigen', howHide: 'Nicht mehr automatisch zeigen', howGo: 'Los geht\'s',
     changeRhythm: 'Rhythmus ändern', backToNotes: 'Zurück zu den Tönen',
     howTitle: 'So funktioniert das Melodiediktat',
@@ -132,6 +133,7 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    newWithGroups: 'New exercise – using only the rhythm groups you chose in the lexicon.',
     howShort: 'Instructions', howOpen: 'Show instructions', howHide: 'Don\'t show automatically again', howGo: 'Let\'s go',
     changeRhythm: 'Change rhythm', backToNotes: 'Back to the notes',
     howTitle: 'How the melody dictation works',
