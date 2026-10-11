@@ -1,6 +1,6 @@
 {
-  "name": "Satzlehre Diktat-Trainer",
-  "short_name": "Diktat-Trainer",
+  "name": "Satzlehre Übungen",
+  "short_name": "Satzlehre Übungen",
   "description": "Gehörbildung für den Satzlehre-Unterricht: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug und Harmoniefolgen.",
   "lang": "de",
   "start_url": "./",

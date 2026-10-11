@@ -173,18 +173,6 @@ function markAccidentals(events, sig) {
   }
 }
 
-/* ---------- stats ---------- */
-const dayKey = () => { const d = new Date(); return 'day:' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
-function todayCount() { return store.get(dayKey(), 0); }
-function statAdd(id, pct) {
-  store.set(dayKey(), todayCount() + 1);
-  const s = store.get('stats:' + id, { n: 0, sum: 0 });
-  s.n += 1; s.sum += pct;
-  store.set('stats:' + id, s);
-  return s;
-}
-function statText(id) {
-  const s = store.get('stats:' + id, { n: 0, sum: 0 });
-  if (!s.n) return t('statsNone');
-  return t(s.n === 1 ? 'statsLine1' : 'statsLine', { n: s.n, avg: Math.round(s.sum / s.n) });
-}
+/* No progress tracking: results are shown once and never stored. Remove anything older versions saved. */
+function statAdd() {}
+try { Object.keys(localStorage).filter(k => /^sdt:(stats:|day:)/.test(k)).forEach(k => localStorage.removeItem(k)); } catch (e) { /* storage blocked */ }

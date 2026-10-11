@@ -178,7 +178,6 @@ const ExLex = {
     this.quizBar.innerHTML = '';
     this.quizBar.append(
       el('span', { class: 'qz-q' }, msg || t('lexQuizQ')),
-      el('span', { class: 'chip ' + (kind === 'ok' ? 'chip-ok' : kind === 'bad' ? 'chip-bad' : 'chip-muted') }, t('lexQuizScore', { ok: q.ok, n: q.n })),
       el('span', { class: 'spacer' }),
       q.answered ? btn('nextTask', ICON.next, () => this.nextQuiz(), 'btn-play') : btn('again', ICON.play, () => this.playQuiz(), 'btn-sec'));
   },
@@ -392,7 +391,7 @@ const ExMel = {
     statAdd('mel', pct);
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     const line = ronly ? t('melResR', { r: rOk, nb }) : t('melRes', { r: rOk, nb, p: pOk, pt: pTot });
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(line)}</span>`, this.yoursBtn);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(line)}</span>`, this.yoursBtn);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },

@@ -149,7 +149,7 @@ function makeFlight(kind) {
       const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
       let msg = t('flRes', { ok, n });
       if (enh) msg += ' ' + t('flEnh', { n: enh });
-      setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`);
+      setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(msg)}</span>`);
       this.P.solWrap.hidden = false;
       this.render(); this.renderSolution();
     },

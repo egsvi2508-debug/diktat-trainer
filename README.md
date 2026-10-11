@@ -1,4 +1,4 @@
-# Satzlehre Diktat-Trainer
+# Satzlehre Übungen
 
 Gehörbildung für den Satzlehre-Unterricht – ohne Klavier und ohne jemanden, der diktiert.
 Ear training for Satzlehre class – no piano and no one dictating needed.
@@ -6,8 +6,8 @@ Ear training for Satzlehre class – no piano and no one dictating needed.
 **App:** https://egsvi2508-debug.github.io/diktat-trainer/
 
 Works in any browser, on phones too. Add it to your home screen and it also works offline.
-No sign-in; nothing is sent anywhere – progress is stored only on your own device.
-Unofficial practice tool, not provided by the mdw.
+No sign-in, nothing is sent anywhere, nothing is tracked.
+Unofficial practice tool for Satzlehre class.
 
 ## Exercises
 
@@ -25,6 +25,6 @@ The source is `index.html` plus `js/`. After changing anything, rebuild the site
 python3 build_webapp.py
 ```
 
-This writes `docs/` (the website GitHub Pages serves) and `Diktat-Trainer.html` (a single offline file).
+This writes `docs/` (the website GitHub Pages serves) and `Satzlehre-Uebungen.html` (a single offline file).
 Piano sound: [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm (CC BY 3.0).
 Notation by [VexFlow](https://www.vexflow.com) (MIT); fonts Wix Madefor Display and Text (SIL OFL).

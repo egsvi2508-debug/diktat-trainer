@@ -603,7 +603,7 @@ const ExHar = {
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     let msg = t('harRes', { ok, n });
     if (oct) msg += ' ' + t('harOct', { n: oct });
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)} ${esc(t('upperOffer'))}</span>`, this.bassBtn, this.upperBtn);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(msg)} ${esc(t('upperOffer'))}</span>`, this.bassBtn, this.upperBtn);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
@@ -620,7 +620,7 @@ const ExHar = {
     this.done2 = true;
     statAdd('har', pct);
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(t('upperRes', { ok, n }))}</span>`);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(t('upperRes', { ok, n }))}</span>`);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },

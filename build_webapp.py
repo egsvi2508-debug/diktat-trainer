@@ -3,7 +3,7 @@
 
 Outputs
   docs/                   installable, offline-capable site (upload to any static host)
-  Diktat-Trainer.html     one self-contained file (open it directly, send it around)
+  Satzlehre-Uebungen.html     one self-contained file (open it directly, send it around)
 
 Run:  python3 build_webapp.py
 """
@@ -22,7 +22,7 @@ NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']
 SAMPLES = [NOTE_NAMES[m % 12] + str(m // 12 - 1) for m in range(33, 97, 3)]   # A1 … C7, same list as js/audio.js
 JS_FILES = ['i18n.js', 'core.js', 'notation.js', 'audio.js', 'ui.js',
             'ex-intervals.js', 'ex-rhythm.js', 'ex-flight.js', 'ex-harmony.js', 'app.js']
-NAME, SHORT = 'Satzlehre Diktat-Trainer', 'Diktat-Trainer'
+NAME, SHORT = 'Satzlehre Übungen', 'Satzlehre Übungen'
 DESC = 'Gehörbildung für den Satzlehre-Unterricht: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug und Harmoniefolgen.'
 
 
@@ -155,7 +155,7 @@ def build_site():
     (OUT / 'manifest.webmanifest').write_text(json.dumps(manifest, indent=2, ensure_ascii=False), 'utf-8')
     files = sorted(p.relative_to(OUT).as_posix() for p in OUT.rglob('*') if p.is_file())
     digest = hashlib.sha1(b''.join((OUT / f).read_bytes() for f in files)).hexdigest()[:10]
-    sw = f"""// Offline cache for the Diktat-Trainer. The version changes with every build.
+    sw = f"""// Offline cache for Satzlehre Übungen. The version changes with every build.
 const CACHE = 'diktat-{digest}';
 const ASSETS = {json.dumps(['./'] + files)};
 self.addEventListener('install', e => {{
@@ -190,7 +190,7 @@ def build_single():
     html = (f'<!doctype html>\n<html lang="de">\n<head>\n{head_meta()}'
             f'<link rel="icon" href="data:image/png;base64,{icon}">\n{title}\n'
             f'<style>\n{fonts()}\n</style>\n{BASE_CSS}\n{style}\n</head>\n<body>\n{body}\n{scripts}\n</body>\n</html>\n')
-    (ROOT / 'Diktat-Trainer.html').write_text(html, 'utf-8')
+    (ROOT / 'Satzlehre-Uebungen.html').write_text(html, 'utf-8')
 
 
 if __name__ == '__main__':
@@ -198,4 +198,4 @@ if __name__ == '__main__':
     build_single()
     size = sum((OUT / f).stat().st_size for f in files)
     print(f'docs/: {len(files)} files, {size / 1024:.0f} KB')
-    print(f"Diktat-Trainer.html: {(ROOT / 'Diktat-Trainer.html').stat().st_size / 1024:.0f} KB")
+    print(f"Satzlehre-Uebungen.html: {(ROOT / 'Satzlehre-Uebungen.html').stat().st_size / 1024:.0f} KB")

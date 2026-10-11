@@ -73,26 +73,14 @@ const App = {
     const tiles = el('div', { class: 'tiles' }, this.list.map(it =>
       el('button', { type: 'button', class: 'tile t-' + it.tint, onclick: go(it.hash) },
         el('span', { class: 'tile-ico', html: ICON[it.icon] }), el('span', {}, t(it.short)))));
-    const today = todayCount(), goal = 10;
-    const lastIt = this.list.find(it => it.hash === store.get('tab')) || this.list[0];
-    const progress = el('button', { type: 'button', class: 'card progress-card', onclick: go(lastIt.hash), title: t('continueWith', { ex: t(lastIt.short) }) },
-      el('b', {}, t('todayLbl')),
-      el('span', { class: 'bar' }, el('i', { style: `width:${Math.min(100, today / goal * 100)}%` })),
-      el('span', { class: 'num' }, `${today}/${goal}`),
-      el('span', { class: 'circle', html: ICON.right }));
     const cards = el('div', { class: 'list' }, this.list.map(it => {
-      const st = store.get('stats:' + it.ex.id, { n: 0, sum: 0 });
-      const meta = st.n
-        ? el('div', { class: 'meta' }, el('span', { class: 'star', html: ICON.star }), el('b', {}, Math.round(st.sum / st.n) + ' %'), `(${st.n})`)
-        : el('div', { class: 'meta' }, t('notYet'));
       return el('button', { type: 'button', class: 'card lcard', onclick: go(it.hash) },
         el('span', { class: 'thumb t-' + it.tint, html: ICON[it.icon] }),
-        el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card)), meta),
+        el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card))),
         el('span', { class: 'circle', html: ICON.right }));
     }));
     this.home.replaceChildren(
       el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
-      progress,
       el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards);
   },
 
@@ -136,17 +124,6 @@ const App = {
     this.exSection = el('section', { class: 'set-sec' });
     const vol = sliderControl('g-vol', 'volume', 0, 1, 0.05, Sound.volume, v => Math.round(v * 100) + ' %', v => Sound.setVolume(v));
     const hear = toggleControl('g-hear', 'hearInput', this.hearInput, v => { this.hearInput = v; store.set('hearInput', v); });
-    const reset = el('button', { type: 'button', class: 'btn btn-sec btn-sm' }, t('resetStats'));
-    reset.addEventListener('click', () => {
-      if (reset.dataset.armed) {
-        try { Object.keys(localStorage).filter(k => k.startsWith('sdt:stats:')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* blocked */ }
-        reset.textContent = t('resetDone'); delete reset.dataset.armed;
-        const ex = this.active; if (ex && ex.render) ex.render();
-        return;
-      }
-      reset.dataset.armed = '1'; reset.textContent = t('resetConfirm');
-      setTimeout(() => { if (reset.dataset.armed) { delete reset.dataset.armed; reset.textContent = t('resetStats'); } }, 4000);
-    });
     const keys = el('ul', { class: 'keys' });
     t('keysList').split('|').forEach(line => { const [k, v] = line.split('='); keys.append(el('li', {}, el('kbd', {}, k), el('span', {}, v))); });
     this.menu.body.append(
@@ -156,7 +133,6 @@ const App = {
       vol,
       toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
       el('div', { class: 'field keys-field' }, el('span', { class: 'field-lbl' }, t('keysTitle')), keys),
-      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('statsTitle')), el('div', { class: 'row' }, reset)),
       el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))
     );
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
