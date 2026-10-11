@@ -24,11 +24,16 @@ service cloud.firestore {
         && request.resource.data[request.resource.data.keys()[0]] == 1;
       allow update: if request.resource.data.diff(resource.data).affectedKeys().size() == 1
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(counters())
-        && request.resource.data[request.resource.data.diff(resource.data).affectedKeys().toList()[0]]
-           == resource.data.get(request.resource.data.diff(resource.data).affectedKeys().toList()[0], 0) + 1;
+        && upOne('devices') && upOne('opens') && upOne('ex_int') && upOne('ex_lex')
+        && upOne('ex_mel') && upOne('ex_sec') && upOne('ex_ter') && upOne('ex_har');
       allow read, delete: if false;
     }
 
+    // a counter stays the same or goes up by exactly 1
+    function upOne(f) {
+      return request.resource.data.get(f, 0) == resource.data.get(f, 0)
+        || request.resource.data.get(f, 0) == resource.data.get(f, 0) + 1;
+    }
     function counters() {
       return ['devices', 'opens', 'ex_int', 'ex_lex', 'ex_mel', 'ex_sec', 'ex_ter', 'ex_har'];
     }
