@@ -27,4 +27,4 @@ python3 build_webapp.py
 
 This writes `docs/` (the website GitHub Pages serves) and `Diktat-Trainer.html` (a single offline file).
 Piano sound: [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm (CC BY 3.0).
-Notation by [VexFlow](https://www.vexflow.com) (MIT); fonts Atkinson Hyperlegible and Young Serif (SIL OFL).
+Notation by [VexFlow](https://www.vexflow.com) (MIT); fonts Wix Madefor Display and Text (SIL OFL).

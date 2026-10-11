@@ -104,7 +104,10 @@ const Harmony = (() => {
           idx.forEach(i => { cnt[i]++; });
           const dc = doublingCost(ch, cnt);
           if (dc === Infinity) continue;
-          out.push({ m: [b, tn, a, s], t: idx, cost: dc + (a === tn ? 2 : 0) });
+          // keep each voice near the middle of its range (tenor ≈ A3, alto ≈ E4, soprano ≈ B♭4)
+          const reg = 0.12 * (Math.max(0, tn - 62) + Math.max(0, 50 - tn)) + 0.08 * (Math.max(0, a - 70) + Math.max(0, 57 - a))
+            + 0.06 * (Math.max(0, s - 76) + Math.max(0, 64 - s)) + 0.05 * Math.max(0, tn - b - 15);
+          out.push({ m: [b, tn, a, s], t: idx, cost: dc + reg + (a === tn ? 2 : 0) });
         }
       }
     }
@@ -192,7 +195,8 @@ const Harmony = (() => {
       const mid = S.n - 1 - tail.length;
       let ok = true;
       for (let i = 0; i < mid; i++) {
-        const nexts = Object.entries(NEXT[seq[seq.length - 1]]).filter(([id]) => allow(id) && id !== 'I64' && id !== seq[seq.length - 1]);
+        // root-position dominants are kept for the cadence, so the progression resolves V–I only once
+        const nexts = Object.entries(NEXT[seq[seq.length - 1]]).filter(([id]) => allow(id) && id !== 'I64' && id !== 'V' && id !== 'V7' && id !== seq[seq.length - 1]);
         if (!nexts.length) { ok = false; break; }
         seq.push(wpick(nexts));
       }
@@ -206,7 +210,7 @@ const Harmony = (() => {
 
   function generate(S) {
     for (let k = 0; k < 40; k++) {
-      const key = randomKey(S.maxAcc, S.mode);
+      const key = randomKey(S.maxAcc, S.mode, 'har');
       const ids = genIds(S, key);
       const res = voiceProgression(key, ids);
       if (res) return { key, ids, ...res };
@@ -366,7 +370,7 @@ function renderChorale(host, task, show, colors) {
 
 const ExHar = {
   id: 'har', no: '5', titleKey: 'harTitle', descKey: 'harDesc',
-  S: Object.assign({ n: 6, mode: 'maj', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 2.4, F: true, St: true, G: true }, store.get('har.s', {})),
+  S: Object.assign({ n: 6, mode: 'both', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 2.4, F: true, St: true, G: true }, store.get('har.s', {})),
   task: null, ans: null, cursor: 1, checked: false, res: null, hit: null,
 
   save() { store.set('har.s', this.S); },

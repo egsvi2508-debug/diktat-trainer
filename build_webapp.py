@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parent
 OUT = ROOT / 'docs'
 CACHE = ROOT / '.build-cache'
 VEXFLOW_URL = 'https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js'
-FONTS_CSS_URL = ('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400'
-                 '&family=Young+Serif&display=swap')
+FONTS_CSS_URL = ('https://fonts.googleapis.com/css2?family=Wix+Madefor+Display:wght@600;700'
+                 '&family=Wix+Madefor+Text:wght@400;600;700&display=swap')
 UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
 SAMPLE_URL = 'https://tonejs.github.io/audio/salamander/{}.mp3'   # Salamander Grand Piano, A. Holm, CC BY 3.0
 NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']

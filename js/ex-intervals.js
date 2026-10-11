@@ -4,8 +4,8 @@
    ============================================================ */
 const ExInt = {
   id: 'int', no: '1', titleKey: 'intTitle', descKey: 'intDesc',
-  S: Object.assign({ dir: 'alt', simple: true, compound: true, play: 'mel' }, store.get('int.s', {})),
-  count: 0, task: null, ans: null, checked: false, result: null, cursor: 0, hit: null,
+  S: Object.assign({ dir: 'alt', simple: true, compound: true, playMode: 'mix' }, store.get('int.s', {})),
+  count: rnd(2), lastSemis: 0, task: null, ans: null, checked: false, result: null, cursor: 0, hit: null,
 
   save() { store.set('int.s', this.S); },
 
@@ -17,7 +17,7 @@ const ExInt = {
       toggleGroup('intRange',
         toggleControl('int-simple', 'intSimple', S.simple, (v, inp) => { if (!v && !S.compound) { inp.checked = true; return; } S.simple = v; this.save(); }),
         toggleControl('int-comp', 'intCompound', S.compound, (v, inp) => { if (!v && !S.simple) { inp.checked = true; return; } S.compound = v; this.save(); })),
-      segControl('int-play', 'intPlayMode', [['mel', t('intMel')], ['harm', t('intHarm')]], S.play, v => { S.play = v; this.save(); })
+      segControl('int-play', 'intPlayMode', [['mix', t('intMix')], ['harm', t('intHarm')], ['mel', t('intMel')]], S.playMode, v => { S.playMode = v; this.save(); this.task.harm = this.pickHarm(); this.render(); })
     );
     this.playBtn = playButton('listen', () => this.events(), { primary: true });
     mainControls(this, P, this.playBtn);
@@ -37,6 +37,7 @@ const ExInt = {
     const LO = 40, HI = 84; // E2 .. C6
     for (let tries = 0; tries < 400; tries++) {
       const semis = pick(pool);
+      if (semis === this.lastSemis && pool.length > 1) continue;
       const base = semis > 12 ? semis - 12 : semis;
       let num = NUM[base] || (chance(0.5) ? 4 : 5);
       if (semis > 12) num += 7;
@@ -53,7 +54,8 @@ const ExInt = {
       const tm = Note.midi(given) + (up ? semis : -semis);
       const target = Note.spell(tm, given.d + (up ? num - 1 : -(num - 1)));
       if (Math.abs(target.a) > 1) continue;
-      this.task = { given, target, up, iv: intervalInfo(given, target) };
+      this.task = { given, target, up, iv: intervalInfo(given, target), harm: this.pickHarm() };
+      this.lastSemis = semis;
       break;
     }
     this.ans = null; this.checked = false; this.result = null;
@@ -64,11 +66,13 @@ const ExInt = {
 
   events() {
     const g = Note.midi(this.task.given), x = Note.midi(this.task.target);
-    if (this.S.play === 'harm') return [{ t: 0, midi: g, dur: 2.4, vel: 0.7 }, { t: 0, midi: x, dur: 2.4, vel: 0.7 }];
+    if (this.task.harm) return [{ t: 0, midi: g, dur: 2.4, vel: 0.7 }, { t: 0, midi: x, dur: 2.4, vel: 0.7 }];
     return [{ t: 0, midi: g, dur: 1.25, vel: 0.72 }, { t: 1.4, midi: x, dur: 1.9, vel: 0.72 }];
   },
 
   hasInput() { return !!this.ans; },
+  // together 7 times out of 10 (the default), or always one way
+  pickHarm() { return this.S.playMode === 'harm' ? true : this.S.playMode === 'mel' ? false : Math.random() < 0.7; },
 
   /* sequence-editor interface (one slot) */
   isLocked() { return this.checked; },
@@ -124,7 +128,8 @@ const ExInt = {
     const { given, target, up } = this.task;
     P.info.replaceChildren(
       chip((up ? '↑ ' : '↓ ') + t(up ? 'intFindUpper' : 'intFindLower'), 'chip-strong'),
-      soundChip(t('intGiven', { n: noteName(given) }), () => [{ t: 0, midi: Note.midi(given), dur: 1.6 }]));
+      soundChip(t('intGiven', { n: noteName(given) }), () => [{ t: 0, midi: Note.midi(given), dur: 1.6 }]),
+      chip(t(this.task.harm ? 'intPlayedHarm' : 'intPlayedMel'), 'chip-muted'));
     const cols = [{ note: given, color: C.ink, slot: 'given', locked: true, label: t('colGiven') }];
     if (!this.checked) cols.push({ note: this.ans, color: C.user, slot: 'ans', label: t('colYours') });
     else if (this.result.shown) {
@@ -152,11 +157,12 @@ const ExInt = {
 function renderGrand(host, cols, opts = {}) {
   const scale = autoScale(host.clientWidth) * 1.12;
   const W = Math.max(260, host.clientWidth) / scale;
-  const width = Math.min(W - 16, 130 + cols.length * 92);
+  const width = Math.min(W - 16, 150 + cols.length * (W > 600 ? 110 : 92));
   const x0 = (W - width) / 2;
-  const { ctx, svg } = vfSurface(host, 262, scale);
-  const tr = new VF.Stave(x0, 0, width).addClef('treble');
-  const bs = new VF.Stave(x0, 120, width).addClef('bass');
+  const top = 18;
+  const { ctx, svg } = vfSurface(host, 262 + top, scale);
+  const tr = new VF.Stave(x0, top, width).addClef('treble');
+  const bs = new VF.Stave(x0, top + 120, width).addClef('bass');
   const ns = Math.max(tr.getNoteStartX(), bs.getNoteStartX());
   tr.setNoteStartX(ns); bs.setNoteStartX(ns);
   tr.setContext(ctx).draw(); bs.setContext(ctx).draw();
@@ -182,12 +188,12 @@ function renderGrand(host, cols, opts = {}) {
   }));
   const tTop = tr.getYForLine(0), bTop = bs.getYForLine(0), mid = (tr.getYForLine(4) + bTop) / 2;
   cols.forEach((c, i) => {
-    if (c.label) svg.appendChild(svgEl('text', { x: xs[i], y: 252, class: 'col-lbl' }, c.label));
+    if (c.label) svg.appendChild(svgEl('text', { x: xs[i], y: 252 + top, class: 'col-lbl' }, c.label));
     if (!c.note && !c.locked) {
       svg.appendChild(svgEl('rect', { x: xs[i] - 15, y: tTop - 6, width: 30, height: bs.getYForLine(4) - tTop + 12, rx: 8, class: 'ph-beat on' }));
       svg.appendChild(svgEl('text', { x: xs[i], y: mid + 6, class: 'ph-plus on' }, '?'));
     }
-    if (opts.sel === c.slot) behind(svg, svgEl('rect', { x: slots[i].x0 + 4, y: tTop - 34, width: slots[i].x1 - slots[i].x0 - 8, height: bs.getYForLine(4) - tTop + 68, rx: 10, class: 'sel' }));
+    if (opts.sel === c.slot) behind(svg, svgEl('rect', { x: slots[i].x0 + 4, y: tTop - 44, width: slots[i].x1 - slots[i].x0 - 8, height: bs.getYForLine(4) - tTop + 80, rx: 10, class: 'sel' }));
   });
   return {
     rows: [

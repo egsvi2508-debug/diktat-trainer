@@ -40,7 +40,7 @@ function makeFlight(kind) {
     newTask() {
       const S = this.S, L = S.bars * 4, step = this.kind - 1;
       const [lo, hi] = this.kind === 2 ? (S.clef === 'treble' ? [60, 81] : [40, 62]) : (S.clef === 'treble' ? [57, 84] : [36, 64]);
-      const key = S.mode === 'key' ? randomKey(4, chance(0.7) ? 'maj' : 'min') : null;
+      const key = S.mode === 'key' ? randomKey(4, chance(0.7) ? 'maj' : 'min', this.id) : null;
       let first;
       if (key) {
         const T0 = (S.clef === 'treble' ? 28 : 14) + key.step;

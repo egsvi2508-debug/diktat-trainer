@@ -5,13 +5,23 @@
 const App = {
   hearInput: store.get('hearInput', false),
   active: null,
+  hash: null,
+  // every exercise: its screen, start-screen tile and list card
   list: [
-    { ex: ExInt, hash: 'intervalle', tab: 'tabInt' },
-    { ex: ExLex, hash: 'rhythmus', tab: 'tabLex' },
-    { ex: ExMel, hash: 'melodie', tab: 'tabMel' },
-    { ex: ExSec, hash: 'sekunden', tab: 'tabSec' },
-    { ex: ExTer, hash: 'terzen', tab: 'tabTer' },
-    { ex: ExHar, hash: 'harmonie', tab: 'tabHar' }
+    { ex: ExInt, hash: 'intervalle', nav: 'int', short: 'tabInt', card: 'cardInt', icon: 'interval', tint: 'blue' },
+    { ex: ExLex, hash: 'rhythmus', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
+    { ex: ExMel, hash: 'melodie', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
+    { ex: ExSec, hash: 'sekunden', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
+    { ex: ExTer, hash: 'terzen', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
+    { ex: ExHar, hash: 'harmonie', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' }
+  ],
+  // bottom bar: five places; Melodie and Im Flug each hold two exercises
+  navs: [
+    { id: 'start', icon: 'home', label: 'navHome' },
+    { id: 'int', icon: 'interval', label: 'navInt' },
+    { id: 'mel', icon: 'melody', label: 'navMel' },
+    { id: 'flug', icon: 'flight', label: 'navFlug' },
+    { id: 'har', icon: 'harmony', label: 'navHar' }
   ],
 
   init() {
@@ -20,17 +30,18 @@ const App = {
       $('#panels').append(el('p', { class: 'feedback fb-bad' }, t('noVex')));
       return;
     }
+    this.home = el('section', { class: 'home', id: 'p-start', hidden: true });
+    $('#panels').append(this.home);
     this.list.forEach(it => {
-      it.ex.root = el('section', { class: 'panel', id: 'p-' + it.hash, role: 'tabpanel', 'aria-labelledby': 't-' + it.hash, hidden: true });
+      it.ex.root = el('section', { class: 'panel', id: 'p-' + it.hash, hidden: true });
       $('#panels').append(it.ex.root);
     });
     this.buildChrome();
     const h = (location.hash || '').slice(1);
-    const start = this.list.find(it => it.hash === h) || this.list.find(it => it.hash === store.get('tab')) || this.list[0];
-    this.show(start.hash);
+    this.show(h === 'start' || this.list.some(it => it.hash === h) ? h : 'start');
     window.addEventListener('hashchange', () => {
-      const it = this.list.find(x => x.hash === location.hash.slice(1));
-      if (it && it.ex !== this.active) this.show(it.hash);
+      const hh = location.hash.slice(1);
+      if (hh !== this.hash && (hh === 'start' || this.list.some(it => it.hash === hh))) this.show(hh);
     });
 
     document.addEventListener('keydown', e => {
@@ -56,28 +67,70 @@ const App = {
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rerender);
   },
 
+  /* ---------- start screen ---------- */
+  renderHome() {
+    const go = hash => () => this.show(hash);
+    const tiles = el('div', { class: 'tiles' }, this.list.map(it =>
+      el('button', { type: 'button', class: 'tile t-' + it.tint, onclick: go(it.hash) },
+        el('span', { class: 'tile-ico', html: ICON[it.icon] }), el('span', {}, t(it.short)))));
+    const today = todayCount(), goal = 10;
+    const lastIt = this.list.find(it => it.hash === store.get('tab')) || this.list[0];
+    const progress = el('button', { type: 'button', class: 'card progress-card', onclick: go(lastIt.hash), title: t('continueWith', { ex: t(lastIt.short) }) },
+      el('b', {}, t('todayLbl')),
+      el('span', { class: 'bar' }, el('i', { style: `width:${Math.min(100, today / goal * 100)}%` })),
+      el('span', { class: 'num' }, `${today}/${goal}`),
+      el('span', { class: 'circle', html: ICON.right }));
+    const cards = el('div', { class: 'list' }, this.list.map(it => {
+      const st = store.get('stats:' + it.ex.id, { n: 0, sum: 0 });
+      const meta = st.n
+        ? el('div', { class: 'meta' }, el('span', { class: 'star', html: ICON.star }), el('b', {}, Math.round(st.sum / st.n) + ' %'), `(${st.n})`)
+        : el('div', { class: 'meta' }, t('notYet'));
+      return el('button', { type: 'button', class: 'card lcard', onclick: go(it.hash) },
+        el('span', { class: 'thumb t-' + it.tint, html: ICON[it.icon] }),
+        el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card)), meta),
+        el('span', { class: 'circle', html: ICON.right }));
+    }));
+    this.home.replaceChildren(
+      el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
+      progress,
+      el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards);
+  },
+
+  /* ---------- header + sub-switch for the current screen ---------- */
+  renderBar() {
+    const bar = $('#appbar');
+    const gear = iconBtn(ICON.gear, 'settings', () => this.openSettings(), 'icon-btn-lg');
+    if (!this.active) {
+      bar.replaceChildren(el('span', { class: 'logo-chip', html: ICON.interval }),
+        el('div', { class: 'appbar-text' }, el('h1', {}, t('greet')), el('p', {}, t('greetSub'))), gear);
+    } else {
+      bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show('start'), 'icon-btn-lg'),
+        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.navs.find(n => n.id === this.list.find(it => it.ex === this.active).nav).label)), el('p', {}, t(this.active.descKey))), gear);
+    }
+    const sub = $('#subtabs');
+    const cur = this.list.find(it => it.ex === this.active);
+    const sibs = cur ? this.list.filter(it => it.nav === cur.nav) : [];
+    sub.hidden = sibs.length < 2;
+    sub.replaceChildren(...(sibs.length < 2 ? [] : sibs.map(it =>
+      el('button', { type: 'button', class: 'subtab', role: 'tab', 'aria-selected': String(it === cur), onclick: () => this.show(it.hash) }, t(it.sub)))));
+    $$('.nav-b', $('#tabs')).forEach(b => b.setAttribute('aria-selected', String(b.dataset.nav === (cur ? cur.nav : 'start'))));
+  },
+
   buildChrome() {
-    // tabs
+    // bottom bar
     const tabs = $('#tabs');
-    tabs.innerHTML = '';
-    this.list.forEach(it => {
-      const b = el('button', { type: 'button', class: 'tab', role: 'tab', id: 't-' + it.hash, 'aria-controls': 'p-' + it.hash, 'aria-selected': 'false' },
-        el('span', { class: 'n' }, it.ex.no), el('span', {}, t(it.tab)));
-      b.addEventListener('click', () => this.show(it.hash));
-      tabs.append(b);
-    });
-    tabs.addEventListener('keydown', e => {
-      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-      const i = this.list.findIndex(it => it.ex === this.active);
-      const j = mod(i + (e.key === 'ArrowRight' ? 1 : -1), this.list.length);
-      this.show(this.list[j].hash);
-      $('#t-' + this.list[j].hash).focus();
-      e.stopPropagation(); e.preventDefault();
-    });
+    tabs.replaceChildren(...this.navs.map(n => {
+      const b = el('button', { type: 'button', class: 'nav-b', role: 'tab', 'data-nav': n.id, 'aria-selected': 'false' },
+        el('span', { class: 'ico', html: ICON[n.icon] }), el('span', {}, t(n.label)));
+      b.addEventListener('click', () => {
+        if (n.id === 'start') { this.show('start'); return; }
+        const last = store.get('last:' + n.id);
+        const it = this.list.find(x => x.nav === n.id && x.hash === last) || this.list.find(x => x.nav === n.id);
+        this.show(it.hash);
+      });
+      return b;
+    }));
     // header: quick language switch + one menu for everything global
-    const g = $('#gctl');
-    g.innerHTML = '';
-    g.append(iconBtn(ICON.gear, 'settings', () => this.openSettings(), 'icon-btn-lg'));
     if (this.menu) this.menu.d.remove();
     this.menu = makeDialog(t('settings'));
     this.exSection = el('section', { class: 'set-sec' });
@@ -111,28 +164,30 @@ const App = {
 
   openSettings() {
     const ex = this.active;
-    this.exSection.replaceChildren(el('h4', { class: 'set-h' }, t(ex.titleKey)), ex.P ? ex.P.settingsBody : '');
+    this.exSection.replaceChildren(...(ex ? [el('h4', { class: 'set-h' }, t(ex.titleKey)), ex.P ? ex.P.settingsBody : ''] : []));
     this.menu.open();
   },
 
   show(hash) {
-    const it = this.list.find(x => x.hash === hash) || this.list[0];
     Sound.stop();
-    this.list.forEach(x => {
-      x.ex.root.hidden = x !== it;
-      const tb = $('#t-' + x.hash);
-      if (tb) { tb.setAttribute('aria-selected', String(x === it)); tb.tabIndex = x === it ? 0 : -1; }
-    });
-    this.active = it.ex;
-    if (!it.built) { it.built = true; it.ex.build(); }
+    const it = this.list.find(x => x.hash === hash);
+    this.hash = it ? it.hash : 'start';
+    this.home.hidden = !!it;
+    this.list.forEach(x => { x.ex.root.hidden = x !== it; });
+    this.active = it ? it.ex : null;
+    this.renderBar();
+    if (!it) this.renderHome();
     else {
-      if (it.ex.render) it.ex.render();
-      if (it.ex.renderSolution) it.ex.renderSolution();
+      if (!it.built) { it.built = true; it.ex.build(); }
+      else {
+        if (it.ex.render) it.ex.render();
+        if (it.ex.renderSolution) it.ex.renderSolution();
+      }
+      store.set('tab', it.hash);
+      store.set('last:' + it.nav, it.hash);
     }
-    const tb = $('#t-' + it.hash);
-    if (tb && tb.scrollIntoView) tb.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    store.set('tab', it.hash);
-    try { history.replaceState(null, '', '#' + it.hash); } catch (e) { /* sandboxed */ }
+    window.scrollTo(0, 0);
+    try { history.replaceState(null, '', '#' + this.hash); } catch (e) { /* sandboxed */ }
   },
 
   setLang(l) {
@@ -141,9 +196,8 @@ const App = {
     store.set('lang', l);
     document.documentElement.lang = l;
     this.buildChrome();
-    const cur = this.list.find(x => x.ex === this.active);
-    this.list.forEach(x => { if (x.built) { if (x === cur) x.ex.build(); else x.built = false; } });
-    this.show(cur.hash);
+    this.list.forEach(x => { if (x.built) { if (x.ex === this.active) x.ex.build(); else x.built = false; } });
+    this.show(this.hash);
   }
 };
 

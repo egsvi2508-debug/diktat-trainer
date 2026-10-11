@@ -119,8 +119,7 @@ const ExLex = {
         el('h3', {}, t(n === 1 ? 'lexOneNote' : 'lexNNotes', { n }), el('span', { class: 'lex-sec-n' }, String(pats.length))),
         grid));
     }
-    root.append(el('p', { class: 'hint-line' }, t(this.descKey)),
-      el('div', { class: 'row lex-bar' }, this.quizBtn, this.countEl),
+    root.append(el('div', { class: 'row lex-bar' }, this.quizBtn, this.countEl),
       this.quizBar, groups);
     this.updateCount();
   },
@@ -206,7 +205,7 @@ const ExLex = {
 /* ---------------- 2b: Melodiediktat ---------------- */
 const ExMel = {
   id: 'mel', no: '2b', titleKey: 'melTitle', descKey: 'melDesc',
-  S: Object.assign({ bars: 4, mode: 'maj', maxAcc: 3, tempo: 50, rhythmOnly: false, metro: false, allPats: false, countIn: true }, store.get('mel.s', {})),
+  S: Object.assign({ bars: 4, mode: 'both', maxAcc: 3, tempo: 50, rhythmOnly: false, metro: false, allPats: false, countIn: true }, store.get('mel.s', {})),
   task: null, ans: null, cur: { b: 0, k: -1 }, checked: false, res: null, hit: null,
 
   save() { store.set('mel.s', this.S); },
@@ -237,7 +236,7 @@ const ExMel = {
 
   newTask() {
     const S = this.S;
-    const key = S.rhythmOnly ? makeKey(0, false) : randomKey(S.maxAcc, S.mode);
+    const key = S.rhythmOnly ? makeKey(0, false) : randomKey(S.maxAcc, S.mode, 'mel');
     const nb = S.bars * 2;
     const beats = genRhythm(nb, ExLex.selected(), S.bars);
     const meta = [];

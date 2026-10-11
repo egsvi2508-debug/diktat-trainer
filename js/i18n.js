@@ -2,6 +2,15 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    navHome: 'Start', navInt: 'Intervalle', navMel: 'Melodie', navFlug: 'Im Flug', navHar: 'Harmonie', back: 'Zurück',
+    greet: 'Hallo!', greetSub: 'Was übst du heute?', secExercises: 'Übungen', secAll: 'Alle Übungen',
+    todayLbl: 'Heute geübt', continueWith: 'Weiter mit {ex}', notYet: 'Noch nicht geübt',
+    subLex: 'Rhythmus-Lexikon', subMel: 'Melodiediktat', subSec: 'Sekunden', subTer: 'Terzen',
+    cardInt: 'Bis zur Doppeloktave · meist zusammen gespielt', cardLex: 'Alle 30 Gruppen eines 6/8-Schlags',
+    cardMel: '6/8 · 4, 8 oder 12 Takte', cardSec: 'Nur Sekunden · ♩ = 40 · 3× hören', cardTer: 'Nur Terzen · ♩ = 40 · 3× hören',
+    cardHar: 'Den Bass vierstimmiger Kadenzen hören',
+    intMix: 'gemischt (7 von 10 zusammen)', intPlayedHarm: 'zusammen gespielt', intPlayedMel: 'nacheinander gespielt',
+
     listen: 'Anhören', listenLeft: 'Anhören · noch {n}×', tapToHear: 'Antippen zum Anhören', general: 'Allgemein',
     dockYourNote: 'Dein Ton', intDockHint: 'Tipp ins Notensystem, wo der zweite Ton steht.',
     dockBeat: 'Takt {bar}, Schlag {beat}', dockRhythm: 'Welcher Rhythmus?', dockRhythmChange: 'Rhythmus ändern:',
@@ -96,6 +105,15 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    navHome: 'Home', navInt: 'Intervals', navMel: 'Melody', navFlug: 'On the fly', navHar: 'Harmony', back: 'Back',
+    greet: 'Hello!', greetSub: 'What will you practise today?', secExercises: 'Exercises', secAll: 'All exercises',
+    todayLbl: 'Practised today', continueWith: 'Continue with {ex}', notYet: 'Not practised yet',
+    subLex: 'Rhythm lexicon', subMel: 'Melody dictation', subSec: 'Seconds', subTer: 'Thirds',
+    cardInt: 'Up to two octaves · mostly played together', cardLex: 'All 30 groups of a 6/8 beat',
+    cardMel: '6/8 · 4, 8 or 12 bars', cardSec: 'Seconds only · ♩ = 40 · 3 listens', cardTer: 'Thirds only · ♩ = 40 · 3 listens',
+    cardHar: 'Hear the bass of four-part progressions',
+    intMix: 'mixed (7 in 10 together)', intPlayedHarm: 'played together', intPlayedMel: 'played one after the other',
+
     listen: 'Listen', listenLeft: 'Listen · {n} left', tapToHear: 'Tap to hear', general: 'General',
     dockYourNote: 'Your note', intDockHint: 'Tap the staff where the second note goes.',
     dockBeat: 'Bar {bar}, beat {beat}', dockRhythm: 'Which rhythm?', dockRhythmChange: 'Change rhythm:',

@@ -119,9 +119,14 @@ function keyName(k) {
   }
   return nameEN(k.step, k.alt) + (k.minor ? ' minor' : ' major');
 }
-function randomKey(maxAcc, modeSel) {
-  const minor = modeSel === 'min' ? true : modeSel === 'maj' ? false : chance(0.5);
-  return makeKey(rnd(2 * maxAcc + 1) - maxAcc, minor);
+const lastKeys = {};
+function randomKey(maxAcc, modeSel, who = '') {
+  for (let i = 0; i < 20; i++) {
+    const minor = modeSel === 'min' ? true : modeSel === 'maj' ? false : chance(0.5);
+    const k = makeKey(rnd(2 * maxAcc + 1) - maxAcc, minor);
+    if (k.vf !== lastKeys[who] || maxAcc === 0 && modeSel !== 'both') { lastKeys[who] = k.vf; return k; }
+  }
+  return makeKey(0, false);
 }
 // scale-degree note: tonic diatonic index T, degree offset k (any integer)
 function degNote(key, T, k) { const d = T + k; return { d, a: key.sig[mod(d, 7)] }; }
@@ -169,7 +174,10 @@ function markAccidentals(events, sig) {
 }
 
 /* ---------- stats ---------- */
+const dayKey = () => { const d = new Date(); return 'day:' + d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+function todayCount() { return store.get(dayKey(), 0); }
 function statAdd(id, pct) {
+  store.set(dayKey(), todayCount() + 1);
   const s = store.get('stats:' + id, { n: 0, sum: 0 });
   s.n += 1; s.sum += pct;
   store.set('stats:' + id, s);
