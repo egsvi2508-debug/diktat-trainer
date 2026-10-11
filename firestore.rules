@@ -9,27 +9,28 @@ service cloud.firestore {
       allow create: if request.resource.data.keys().hasOnly(['type', 'text', 'exercise', 'lang', 'created'])
         && request.resource.data.type in ['idea', 'bug', 'praise']
         && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000
+        && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 2000
         && request.resource.data.exercise is string && request.resource.data.exercise.size() <= 20
         && request.resource.data.lang in ['de', 'en']
         && request.resource.data.created is timestamp;
       allow read, update, delete: if false;
     }
 
-    // daily counters, one document per day (e.g. days/2026-10-11): exactly one field goes up by exactly 1
+    // one document per day (days/2026-10-11): counters that can only go up by 1
     match /days/{day} {
-      allow create, update: if day.matches('^20[0-9]{2}-[0-9]{2}-[0-9]{2}$') && plusOne();
+      allow create: if day.matches('20[0-9]{2}-[0-9]{2}-[0-9]{2}')
+        && request.resource.data.size() == 1
+        && request.resource.data.keys().hasOnly(counters())
+        && request.resource.data[request.resource.data.keys()[0]] == 1;
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().size() == 1
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(counters())
+        && request.resource.data[request.resource.data.diff(resource.data).affectedKeys().toList()[0]]
+           == resource.data.get(request.resource.data.diff(resource.data).affectedKeys().toList()[0], 0) + 1;
       allow read, delete: if false;
     }
 
-    function plusOne() {
-      let before = resource == null ? {} : resource.data;
-      let changed = request.resource.data.diff(before).affectedKeys();
-      let field = changed.toList()[0];
-      return changed.size() == 1
-        && field in ['devices', 'opens', 'ex_int', 'ex_lex', 'ex_mel', 'ex_sec', 'ex_ter', 'ex_har']
-        && request.resource.data[field] == before.get(field, 0) + 1;
+    function counters() {
+      return ['devices', 'opens', 'ex_int', 'ex_lex', 'ex_mel', 'ex_sec', 'ex_ter', 'ex_har'];
     }
   }
 }

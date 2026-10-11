@@ -11,8 +11,8 @@
    - Stays switched off until BACKEND.projectId and BACKEND.apiKey are filled in.
    ============================================================ */
 const BACKEND = {
-  projectId: '',   // ← Firebase project ID
-  apiKey: ''       // ← Firebase web API key (public by design; security comes from the rules)
+  projectId: 'satzlehre',   // ← Firebase project ID
+  apiKey: 'AIzaSyCjQWx6bv4_fI99ONTX_4OU__35Sz07Jy8'       // ← Firebase web API key (public by design; security comes from the rules)
 };
 
 const Backend = (() => {
