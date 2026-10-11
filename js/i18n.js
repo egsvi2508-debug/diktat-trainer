@@ -2,6 +2,7 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    paperTitle: 'Tipp:', paperText: 'Du kannst deine Antwort direkt in der App eintragen – effizienter ist es aber, beim Hören auf Papier mitzuschreiben und dann hier mit der Lösung zu vergleichen.',
     installTitle: 'Als App installieren', installBtn: 'Installieren',
     installAndroid: 'Dann öffnet sich Satzlehre Übungen wie eine App vom Startbildschirm – auch offline.',
     installIOS: 'Tippe unten auf <b>Teilen</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> und dann auf <b>„Zum Home-Bildschirm“</b>.',
@@ -117,6 +118,7 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    paperTitle: 'Tip:', paperText: 'You can enter your answer directly in the app – but it is more efficient to write along on paper while you listen and then check it here against the solution.',
     installTitle: 'Install as an app', installBtn: 'Install',
     installAndroid: 'Satzlehre Übungen then opens like an app from your home screen – offline too.',
     installIOS: 'Tap <b>Share</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> below, then <b>“Add to Home Screen”</b>.',

@@ -110,7 +110,11 @@ const App = {
         el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card))),
         el('span', { class: 'circle', html: ICON.right }));
     }));
+    const paper = el('div', { class: 'card paper-tip' },
+      el('span', { class: 'paper-ico', html: ICON.pencil }),
+      el('p', {}, el('b', {}, t('paperTitle')), ' ', t('paperText')));
     this.home.replaceChildren(
+      paper,
       this.installCard(),
       el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
       el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards);

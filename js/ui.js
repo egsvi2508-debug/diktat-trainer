@@ -98,6 +98,11 @@ function panelShell(ex) {
   P.sheet = el('div', { class: 'sheet' }, P.score, P.dock);
   P.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, P.solHost));
   root.append(P.info, P.opts, P.sheet, P.controls, P.feedback, P.solWrap);
+  // phones: the note keys sit together with the two big buttons in one panel pinned above the tab bar
+  const phone = matchMedia('(max-width: 720px)');
+  const placeDock = () => { if (phone.matches) P.controls.prepend(P.dock); else P.sheet.append(P.dock); };
+  placeDock();
+  try { phone.addEventListener('change', placeDock); } catch (e) { /* old browser */ }
   return P;
 }
 
