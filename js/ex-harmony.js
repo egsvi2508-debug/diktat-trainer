@@ -417,7 +417,9 @@ const VOICE_RANGE = { 3: [30, 44], 2: [25, 40], 1: [17, 33] };   // diatonic lim
 const ExHar = {
   id: 'har', no: '5', titleKey: 'harTitle',
   get descKey() { return this.stage === 2 ? 'harDesc2' : 'harDesc'; },
-  S: Object.assign({ bars: 4, mode: 'both', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 2.4, F: true, St: true, G: true }, store.get('har.s', {})),
+  // (b2: the bass boost became gentler – older saved settings get the new value once)
+  S: (s => { if (!s.b2) { s.boost = 1.6; s.b2 = true; } return s; })(
+    Object.assign({ bars: 4, mode: 'both', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 1.6, F: true, St: true, G: true }, store.get('har.s', {}))),
   task: null, ans: null, hit: null,
   stage: 1,            // 1 = bass, 2 = upper voices
   c1: 1, done1: false, res1: null,   // step 1 state
@@ -489,7 +491,7 @@ const ExHar = {
         if (bassOnly && k > 0) return;
         // the bass is louder only in step 1 (finding the bass); in step 2 all voices are balanced
         const boost = k === 0 && !bassOnly && this.stage === 1 ? this.S.boost : 1;
-        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.8 : d * 1.01, vel: k === 0 ? 0.8 : last ? 0.5 : 0.6, gain: boost });
+        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.8 : d * 1.01, vel: last ? 0.5 : 0.6, gain: boost });
       });
     });
     return ev;
