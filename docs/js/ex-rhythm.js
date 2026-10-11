@@ -31,20 +31,9 @@ function patternName(p) {
   return runs.map(r => (r.n > 1 ? r.n + '× ' : '') + names[r.u]).join(' · ');
 }
 
-/* Small rhythm picture on a one-line staff. Every group is drawn as ONE beamed group of three eighths,
-   so its shape is learned as a whole: a note longer than a dotted eighth (a quarter) is written as tied
-   beamable notes – on the eighth grid 8⁀8, off the grid 8.⁀16. Only the dotted quarter (the whole beat)
-   stays a single note. The sound is unchanged. */
-function groupPieces(durs) {
-  const out = [];
-  let pos = 0;
-  durs.forEach(u => {
-    const parts = u === 4 ? (pos % 2 === 0 ? [2, 2] : [3, 1]) : [u];
-    parts.forEach((v, i) => out.push({ u: v, tie: i < parts.length - 1 }));
-    pos += u;
-  });
-  return out;
-}
+/* Small rhythm picture on a one-line staff, in normal notation (no ties).
+   Neighbouring short notes are always beamed together, so sixteenths never stand alone
+   next to a quarter (e.g. ♩ + two sixteenths: the sixteenths share a beam). */
 function renderRhythmMini(host, durs, w = 120, scale = 1) {
   host.innerHTML = '';
   const r = new VF.Renderer(host, VF.Renderer.Backends.SVG);
@@ -54,19 +43,22 @@ function renderRhythmMini(host, durs, w = 120, scale = 1) {
   ctx.setFillStyle('currentColor'); ctx.setStrokeStyle('currentColor');
   const st = new VF.Stave(2, 2, w - 4, { num_lines: 1 });
   st.setContext(ctx).draw();
-  const pieces = groupPieces(durs);
-  const notes = pieces.map(pc => {
-    const n = new VF.StaveNote({ keys: ['f/5'], duration: DUR_VF[pc.u], stem_direction: 1 });
-    if (pc.u === 3 || pc.u === 6) VF.Dot.buildAndAttach([n], { all: true });
+  const notes = durs.map(u => {
+    const n = new VF.StaveNote({ keys: ['f/5'], duration: DUR_VF[u], stem_direction: 1 });
+    if (u === 3 || u === 6) VF.Dot.buildAndAttach([n], { all: true });
     return n;
   });
-  const beamable = notes.filter((n, i) => pieces[i].u < 4);
-  const beams = beamable.length > 1 ? [new VF.Beam(beamable)] : [];
+  // beam every run of two or more consecutive notes shorter than a quarter
+  const beams = [];
+  let run = [];
+  durs.forEach((u, i) => {
+    if (u < 4) run.push(notes[i]);
+    if (u >= 4 || i === durs.length - 1) { if (run.length > 1) beams.push(new VF.Beam(run)); run = []; }
+  });
   const v = new VF.Voice({ num_beats: 3, beat_value: 8 }).setMode(VF.Voice.Mode.SOFT).addTickables(notes);
   new VF.Formatter().joinVoices([v]).format([v], w - 34);
   v.draw(ctx, st);
   beams.forEach(b => b.setContext(ctx).draw());
-  pieces.forEach((pc, i) => { if (pc.tie) new VF.StaveTie({ first_note: notes[i], last_note: notes[i + 1], first_indices: [0], last_indices: [0] }).setContext(ctx).draw(); });
   host.querySelector('svg').setAttribute('class', 'mini-svg');
 }
 function onsetGrid(durs) {
