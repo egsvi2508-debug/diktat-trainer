@@ -2,6 +2,7 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    howShort: 'Anleitung', howOpen: 'Anleitung anzeigen', howHide: 'Nicht mehr automatisch zeigen', howGo: 'Los geht\'s',
     changeRhythm: 'Rhythmus ändern', backToNotes: 'Zurück zu den Tönen',
     howTitle: 'So funktioniert das Melodiediktat',
     how1: '<b>Anhören</b> – so oft du willst.',
@@ -131,6 +132,7 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    howShort: 'Instructions', howOpen: 'Show instructions', howHide: 'Don\'t show automatically again', howGo: 'Let\'s go',
     changeRhythm: 'Change rhythm', backToNotes: 'Back to the notes',
     howTitle: 'How the melody dictation works',
     how1: '<b>Listen</b> – as often as you like.',

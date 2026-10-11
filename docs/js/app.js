@@ -213,6 +213,7 @@ const App = {
       }
       store.set('tab', it.hash);
       store.set('last:' + it.nav, it.hash);
+      if (it.ex === ExMel && !store.get('howMelHide', false)) ExMel.showHow();
     }
     window.scrollTo(0, 0);
     try { history.replaceState(null, '', '#' + this.hash); } catch (e) { /* sandboxed */ }

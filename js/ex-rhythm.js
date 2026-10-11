@@ -241,16 +241,25 @@ const ExMel = {
     this.yoursBtn = playButton('playYours', () => this.events(this.ans.filter(b => b.pat), false));
     this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel') });
     mainControls(this, P, this.playBtn);
-    const how = el('details', { class: 'how' }, el('summary', {}, el('span', { class: 'how-ico', html: ICON.ear }), t('howTitle')),
-      el('ol', {}, ['how1', 'how2', 'how3', 'how4'].map(k => el('li', { html: t(k) }))),
-      el('p', { class: 'how-lex' }, t('howLex'), ' ', el('button', { type: 'button', class: 'linkish', onclick: () => App.show('rhythmus') }, t('howLexLink'))));
-    how.open = store.get('howMel', true);
-    how.addEventListener('toggle', () => store.set('howMel', how.open));
-    P.info.before(how);
+    P.settingsBody.prepend(el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('howShort')),
+      btn('howOpen', ICON.ear, () => { App.menu.d.close(); this.showHow(); }, 'btn-sec btn-sm')));
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     watchWidth(P.solHost, () => this.renderSolution());
     if (!this.task) this.newTask(); else { this.renderPalette(); this.render(); }
+  },
+
+  /* the instructions open in their own window when you enter the tab (not on the exercise page) */
+  showHow() {
+    if (this.howDlg) this.howDlg.d.remove();
+    const g = this.howDlg = makeDialog(t('howTitle'));
+    const off = toggleControl('how-off', 'howHide', store.get('howMelHide', false), v => store.set('howMelHide', v));
+    g.body.append(
+      el('ol', { class: 'how-list' }, ['how1', 'how2', 'how3', 'how4'].map(k => el('li', { html: t(k) }))),
+      el('p', { class: 'hint' }, t('howLex'), ' ', el('button', { type: 'button', class: 'linkish', onclick: () => { g.d.close(); App.show('rhythmus'); } }, t('howLexLink'))),
+      off);
+    $('.dlg-foot .lbl', g.d).textContent = t('howGo');
+    g.open();
   },
 
   newTask() {
