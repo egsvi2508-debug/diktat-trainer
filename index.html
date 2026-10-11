@@ -129,7 +129,10 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spac
 .install h3 { margin: 0; font-size: var(--t-body); }
 .install p { margin: 2px 0 0; font-size: var(--t-small); color: var(--ink-2); line-height: 1.45; }
 .install p b { color: var(--ink); }
-.install .btn { grid-column: 2 / 4; justify-self: start; }
+.install .install-btn { grid-column: 1 / -1; width: 100%; min-height: 48px; }
+.guide { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; font-size: 16px; line-height: 1.5; }
+.guide-step { display: grid; grid-template-columns: 32px 1fr; gap: 12px; align-items: start; }
+.guide-n { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; }
 .install-x { position: absolute; top: 8px; right: 8px; background: transparent; box-shadow: none; }
 .paper-tip { margin-top: 8px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; padding: 14px 16px; background: var(--sheet); }
 .paper-ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--tint-sand); color: var(--tint-sand-ico); }
@@ -203,6 +206,9 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spac
 .chip-muted { background: var(--soft); box-shadow: none; color: var(--ink-2); }
 .chip-sound { cursor: pointer; }
 .chip-sound .ico { color: var(--accent); }
+.chip.chip-first { background: var(--accent); color: var(--accent-ink); box-shadow: none; font-size: 14px; }
+.chip.chip-first .ico { color: var(--accent-ink); }
+.score-svg .ph-plus.ph-first { font: 700 15px var(--font-display); fill: var(--accent); }
 .chip-sound:hover { box-shadow: 0 1px 2px var(--shadow), inset 0 0 0 1.5px var(--accent); }
 .chip-sound:active { transform: scale(.97); }
 

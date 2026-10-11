@@ -409,7 +409,7 @@ const ExMel = {
       const events = [], groups = [];
       for (let bb = 0; bb < 2; bb++) {
         const b = bar * 2 + bb, bt = beatsArr[b];
-        if (!bt.pat) { events.push({ dur: 'qd', note: null, slot: withSlots ? 'b' + b : null, ph: withSlots ? 'beat' : null, tint: colorFn(b, -1) === 'bad' ? 'bad' : null }); continue; }
+        if (!bt.pat) { events.push({ dur: 'qd', note: null, slot: withSlots ? 'b' + b : null, ph: withSlots ? 'beat' : null, phLabel: b === 0 && withSlots && !this.S.rhythmOnly ? noteName(this.task.start) : null, tint: colorFn(b, -1) === 'bad' ? 'bad' : null }); continue; }
         const g = [];
         bt.pat.split('-').map(Number).forEach((u, k) => {
           g.push(events.length);
@@ -427,7 +427,7 @@ const ExMel = {
     const P = this.P, C = notaColors(), S = this.S, task = this.task;
     if (!S.rhythmOnly) P.info.replaceChildren(
       soundChip(keyName(task.key), () => cadenceEvents(task.key)),
-      soundChip(t('startChip', { n: noteName(task.start) }), () => [{ t: 0, midi: Note.midi(task.start), dur: 1.6 }]));
+      (() => { const c = soundChip(t('firstNoteChip', { n: noteName(task.start) }), () => [{ t: 0, midi: Note.midi(task.start), dur: 1.6 }]); c.classList.add('chip-first'); return c; })());
     else P.info.replaceChildren(chip(t('rhythmOnly'), 'chip-strong'));
     P.opts.replaceChildren(lengthControl('lenBars', [2, 4, 8, 12, 16], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
       tempoControl('tempoLbl', S.tempo, 30, 96, 2, v => '♩. = ' + v, v => { S.tempo = v; this.save(); }));
@@ -446,7 +446,7 @@ const ExMel = {
     const where = t('dockBeat', { bar: Math.floor(this.cur.b / 2) + 1, beat: this.cur.b % 2 + 1 });
     if (this.checked) dockHide(P);
     else if (this.cur.k < 0 || S.rhythmOnly) {
-      dockHint(P, where, t(this.ans[this.cur.b].pat ? 'dockRhythmChange' : 'dockRhythm'));
+      dockHint(P, where, this.cur.b === 0 && !this.ans[0].pat && !S.rhythmOnly ? t('dockFirstNote', { n: noteName(task.start) }) : t(this.ans[this.cur.b].pat ? 'dockRhythmChange' : 'dockRhythm'));
       P.dock.append(this.palette);
     } else dockNote(P, this, where + ' · ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
     syncControls(this);

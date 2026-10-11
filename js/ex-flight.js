@@ -51,21 +51,21 @@ function makeFlight(kind) {
         first = { d, a };
       }
       const notes = [first];
-      let dir = chance(0.5) ? 1 : -1;
+      // fully random: every step is a coin flip – up or down, minor or major (only the range edges force a
+      // direction). A note that would need a double accidental is written enharmonically (E𝄪 → F♯).
       for (let i = 1; i < L; i++) {
         const prev = notes[i - 1], pm = Note.midi(prev);
-        const zig = i >= 2 && Math.sign(notes[i - 1].d - notes[i - 2].d) === dir && i >= 3 && Math.sign(notes[i - 2].d - notes[i - 3].d) === -dir;
-        if (chance(zig ? 0.15 : this.kind === 2 ? 0.35 : 0.33)) dir = -dir;
         const reach = this.kind === 2 ? 2 : 4;
+        let dir = chance(0.5) ? 1 : -1;
         if (pm + reach > hi) dir = -1;
         if (pm - reach < lo) dir = 1;
         const d = prev.d + dir * step;
         let n;
         if (key) n = { d, a: key.sig[mod(d, 7)] };
         else {
-          const semis = this.kind === 2 ? [1, 2] : [3, 4];
-          const cands = semis.map(s => Note.spell(pm + dir * s, d)).filter(x => Math.abs(x.a) <= 1);
-          n = pick(cands);
+          const m = pm + dir * (this.kind === 2 ? pick([1, 2]) : pick([3, 4]));
+          n = Note.spell(m, d);
+          if (Math.abs(n.a) > 1) n = [d - 1, d + 1].map(dd => Note.spell(m, dd)).sort((x, y) => Math.abs(x.a) - Math.abs(y.a))[0];
         }
         notes.push(n);
       }
@@ -200,7 +200,7 @@ function makeFlight(kind) {
       if (this.checked) dockHide(P);
       else {
         const lbl = t('dockNoteN', { i: this.cursor + 1, n: this.ans.length });
-        dockNote(P, this, lbl, this.ans[this.cursor]);
+        dockNote(P, this, lbl, this.ans[this.cursor], { steps: true });
       }
       this.playBtn.refresh();
       syncControls(this);

@@ -128,10 +128,17 @@ def build_site():
     title, style, body = split_page()
     scripts = '\n'.join(['<script src="vendor/vexflow.js"></script>'] + [f'<script src="js/{f}"></script>' for f in JS_FILES])
     # register the offline cache; when a new version is published, reload once so it takes effect
+    # Register the service worker; look for a new version every time the app is opened or comes back
+    # to the foreground, and reload once when one is installed – so changes reach everyone right away.
     sw_reg = ("<script>if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {"
               "const had = !!navigator.serviceWorker.controller;"
               "navigator.serviceWorker.addEventListener('controllerchange', () => { if (had) location.reload(); });"
-              "navigator.serviceWorker.register('sw.js').catch(() => {}); }</script>")
+              "navigator.serviceWorker.register('sw.js').then(reg => {"
+              "document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });"
+              "setInterval(() => reg.update().catch(() => {}), 15 * 60 * 1000); }).catch(() => {}); }</script>")
+    # catch the browser's "can be installed" signal before anything else loads, so the install button never misses it
+    early = ("<script>window.__installPrompt = null;"
+             "addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installPrompt = e; document.dispatchEvent(new Event('installready')); });</script>")
     extra = ('<link rel="manifest" href="manifest.webmanifest">\n'
              '<link rel="icon" href="icons/favicon-64.png" type="image/png">\n'
              '<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">\n'
@@ -140,7 +147,7 @@ def build_site():
              f'<meta name="apple-mobile-web-app-title" content="{SHORT}">\n'
              '<meta name="apple-mobile-web-app-status-bar-style" content="default">\n')
     html = (f'<!doctype html>\n<html lang="de">\n<head>\n{head_meta(extra)}{title}\n'
-            f'<link rel="stylesheet" href="fonts/fonts.css">\n{BASE_CSS}\n{style}\n</head>\n<body>\n{body}\n{scripts}\n{sw_reg}\n</body>\n</html>\n')
+            f'<link rel="stylesheet" href="fonts/fonts.css">\n{early}\n{BASE_CSS}\n{style}\n</head>\n<body>\n{body}\n{scripts}\n{sw_reg}\n</body>\n</html>\n')
     (OUT / 'index.html').write_text(html, 'utf-8')
     manifest = {
         'id': './', 'name': NAME, 'short_name': SHORT, 'description': DESC, 'lang': 'de',
@@ -165,13 +172,26 @@ self.addEventListener('activate', e => {{
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 }});
+// The app itself (page, code, manifest) is fetched fresh from the network whenever online, so a new
+// version shows up immediately; the saved copy is used offline. Big files that never change between
+// versions (notation library, fonts, piano samples, icons) come from the cache.
+const FRESH = /(\/|\.html|\.js|\.webmanifest)$/;
 self.addEventListener('fetch', e => {{
-  const req = e.request;
-  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const req = e.request, url = new URL(req.url);
+  if (req.method !== 'GET' || url.origin !== location.origin) return;
+  const fresh = req.mode === 'navigate' || (FRESH.test(url.pathname) && !url.pathname.includes('/vendor/'));
+  if (fresh) {{
+    // a fresh request for the plain URL works for every kind of load (page, script, manifest)
+    e.respondWith(fetch(url.href, {{ cache: 'no-cache', credentials: 'same-origin' }}).then(res => {{
+      if (res.ok) {{ const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }}
+      return res;
+    }}).catch(() => caches.match(req, {{ ignoreSearch: true }}).then(hit => hit || (req.mode === 'navigate' ? caches.match('index.html') : Response.error()))));
+    return;
+  }}
   e.respondWith(caches.match(req, {{ ignoreSearch: true }}).then(hit => hit || fetch(req).then(res => {{
     if (res.ok) {{ const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }}
     return res;
-  }}).catch(() => req.mode === 'navigate' ? caches.match('index.html') : Response.error())));
+  }})));
 }});
 """
     (OUT / 'sw.js').write_text(sw, 'utf-8')

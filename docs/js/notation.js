@@ -215,7 +215,7 @@ function renderLines(host, spec) {
         if (ev.ph === 'beat') {
           const active = spec.sel === ev.slot;
           svg.appendChild(svgEl('rect', { x: g.x0 + 4, y: row.topY - 3, width: Math.max(8, g.x1 - g.x0 - 8), height: 46, rx: 7, class: 'ph-beat' + (active ? ' on' : '') }));
-          svg.appendChild(svgEl('text', { x: (g.x0 + g.x1) / 2, y: row.topY + 25, class: 'ph-plus' + (active ? ' on' : '') }, '+'));
+          svg.appendChild(svgEl('text', { x: (g.x0 + g.x1) / 2, y: row.topY + 25, class: 'ph-plus' + (active ? ' on' : '') + (ev.phLabel ? ' ph-first' : '') }, ev.phLabel || '+'));
         } else if (ev.ph === 'note') {
           svg.appendChild(svgEl('circle', { cx: g.cx, cy: row.topY + 20, r: 6, class: 'ph-note' + (spec.sel === ev.slot ? ' on' : '') }));
         }
@@ -419,8 +419,11 @@ function noteTools(ex, opts = {}) {
     names.map((n, step) => el('button', { type: 'button', class: 'key', onclick: () => ex.cmd('letter', { step }) }, n)));
   const acc = (sym, titleKey, fn) => b(`<span class="acc">${sym}</span>`, titleKey, fn);
   const tools = el('div', { class: 'tools' },
-    b(`${ICON.down}<span class="oct">8</span>`, 'tbOctDown', () => ex.cmd('octDown'), 'oct-btn'),
-    b(`${ICON.up}<span class="oct">8</span>`, 'tbOctUp', () => ex.cmd('octUp'), 'oct-btn'),
+    // seconds/thirds dictations move one step; the other exercises move an octave
+    opts.steps ? b(`${ICON.down}<span class="oct">1</span>`, 'tbDown', () => ex.cmd('down'), 'oct-btn')
+      : b(`${ICON.down}<span class="oct">8</span>`, 'tbOctDown', () => ex.cmd('octDown'), 'oct-btn'),
+    opts.steps ? b(`${ICON.up}<span class="oct">1</span>`, 'tbUp', () => ex.cmd('up'), 'oct-btn')
+      : b(`${ICON.up}<span class="oct">8</span>`, 'tbOctUp', () => ex.cmd('octUp'), 'oct-btn'),
     acc('♭', 'tbFlat', () => ex.cmd('accDown')),
     acc('♮', 'tbNat', () => ex.cmd('acc', 0)),
     acc('♯', 'tbSharp', () => ex.cmd('accUp')),
