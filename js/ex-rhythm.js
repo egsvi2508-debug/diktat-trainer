@@ -352,35 +352,40 @@ const ExMel = {
   staffDown(r) {
     if (this.checked) return;
     const s = this.parseSlot(r.slot.id); if (!s) return;
+    // first tap only selects (a beat or a note); tapping the selected note again sets its pitch
+    const same = s.b === this.cur.b && s.k === this.cur.k;
     this.pickFor = null;
     this.cur = s;
-    if (s.k >= 0 && !this.S.rhythmOnly) {
+    if (same && s.k >= 0 && !this.S.rhythmOnly) {
       const i = this.cursor;
       this.setNote(i, { d: r.dia, a: this.defaultAlt(i, r.dia) });
     } else this.render();
   },
   staffDrag(id, r) {
     if (this.checked || this.S.rhythmOnly) return;
-    const s = this.parseSlot(id); if (!s || s.k < 0) return;
-    this.cur = s;
+    const s = this.parseSlot(id); if (!s || s.k < 0 || s.b !== this.cur.b || s.k !== this.cur.k) return;
     const i = this.cursor;
     this.setNote(i, { d: r.dia, a: this.defaultAlt(i, r.dia) });
   },
-  canPreview(slot) { return !this.checked && !this.S.rhythmOnly && /n\d+$/.test(slot.id); },
+  canPreview(slot) { return !this.checked && !this.S.rhythmOnly && slot.id === 'b' + this.cur.b + 'n' + this.cur.k; },
 
   applyPattern(id) {
     if (this.checked) return;
     this.pickFor = null;
     const b = this.cur.b;
-    const old = this.ans[b].notes;
+    const old = this.ans[b].notes, wasEmpty = !this.ans[b].pat;
     const ref = old[old.length - 1] || this.refNote(this.cursor) || this.task.start;
     const durs = id.split('-');
     const first = b === 0 && !old.length ? this.task.start : null;
     this.ans[b] = { pat: id, notes: durs.map((_, k) => ({ ...(old[k] || (k === 0 && first) || ref) })) };
+    // a new rhythm moves straight on to the next empty beat; when every beat has one, the notes start at the beginning
+    const next = this.ans.findIndex((x, j) => j > b && !x.pat);
     if (this.S.rhythmOnly) {
       const nb = Math.min(b + 1, this.ans.length - 1);
       this.cur = { b: nb, k: this.ans[nb].pat ? 0 : -1 };
-    } else this.cur = { b, k: 0 };
+    } else if (!wasEmpty) this.cur = { b, k: 0 };
+    else if (next >= 0) this.cur = { b: next, k: -1 };
+    else this.cur = { b: 0, k: 0 };
     setFeedback(this.P.feedback, '', '');
     this.render();
   },
