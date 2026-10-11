@@ -72,34 +72,46 @@ function styleNote(sn, color) {
   sn.getModifiers().forEach(m => { if (m.setStyle) m.setStyle(st); });
 }
 
-// ev: {dur, note|null, acc, color, stem}
+// ev: {dur, note|null, acc, color, stem, ph}
+// Layout is kept stable while you write: every note reserves the width of an accidental (invisible when
+// there is none), and an empty note slot is an invisible note of the same width – so nothing slides.
+const INVISIBLE = { fillStyle: 'transparent', strokeStyle: 'transparent' };
+function spacerAcc() { const a = new VF.Accidental('#'); a.setStyle(INVISIBLE); return a; }
 function mkNote(ev, clef) {
-  if (!ev.note) return new VF.GhostNote({ duration: ev.dur });
+  if (!ev.note) {
+    if (ev.ph !== 'note') return new VF.GhostNote({ duration: ev.dur });
+    const sn = new VF.StaveNote({ keys: [clef === 'bass' ? 'd/3' : 'b/4'], duration: ev.dur, clef, auto_stem: true });
+    sn.addModifier(spacerAcc(), 0);
+    sn.setStyle(INVISIBLE);
+    return sn;
+  }
   const opts = { keys: [Note.vfKey(ev.note)], duration: ev.dur, clef };
   if (ev.stem) opts.stem_direction = ev.stem; else opts.auto_stem = true;
   const sn = new VF.StaveNote(opts);
-  if (ev.acc != null) sn.addModifier(new VF.Accidental(ACC_VF[ev.acc]), 0);
+  sn.addModifier(ev.acc != null ? new VF.Accidental(ACC_VF[ev.acc]) : spacerAcc(), 0);
   if (ev.dur.includes('d')) VF.Dot.buildAndAttach([sn], { all: true });
   styleNote(sn, ev.color);
+  if (ev.acc == null) sn.getModifiers().forEach(m => { if (m instanceof VF.Accidental) m.setStyle(INVISIBLE); });
   return sn;
 }
 
+const hasHead = ev => !!ev.note || ev.ph === 'note';
 function slotGeometry(stave, events, notes) {
   const L = [], R = [];
   notes.forEach((n, i) => {
-    if (events[i].note) { L.push(n.getNoteHeadBeginX() - 2); R.push(n.getNoteHeadEndX() + 2); }
+    if (hasHead(events[i])) { L.push(n.getNoteHeadBeginX() - 2); R.push(n.getNoteHeadEndX() + 2); }
     else { const x = n.getAbsoluteX(); L.push(x - 6); R.push(x - 6); }
   });
   const bounds = [stave.getNoteStartX() - 4];
   for (let i = 1; i < notes.length; i++) {
-    if (!events[i].note) bounds.push(L[i]);
-    else if (!events[i - 1].note) bounds.push(L[i] - 6);
+    if (!hasHead(events[i])) bounds.push(L[i]);
+    else if (!hasHead(events[i - 1])) bounds.push(L[i] - 6);
     else bounds.push((R[i - 1] + L[i]) / 2);
   }
   bounds.push(stave.getNoteEndX());
   return notes.map((n, i) => {
     const x0 = bounds[i], x1 = bounds[i + 1];
-    const cx = events[i].note ? (L[i] + R[i]) / 2 : (x0 + x1) / 2;
+    const cx = hasHead(events[i]) ? (L[i] + R[i]) / 2 : (x0 + x1) / 2;
     return { x0, x1, cx };
   });
 }
@@ -225,15 +237,29 @@ function drawPreview(svg, ex, r) {
   g.appendChild(svgEl('ellipse', { cx: slot.cx, cy: y, rx: 5.8, ry: 4.3, transform: `rotate(-20 ${slot.cx} ${y})` }));
   svg.appendChild(g);
 }
-/* Tap a slot to place a note there; keep the finger (or mouse button) down and drag to change the pitch.
-   Mouse: the note follows the pointer exactly. Touch: relative – about every 10 px is one step – with a
-   bubble above the finger showing the note name, because the finger hides the note. */
-const DRAG_STEP_PX = 10;
+/* Writing on the staff.
+   Mouse: click places the note; keep the button down and drag to change the pitch.
+   Touch: a swipe scrolls the page and changes nothing; a tap places/selects the note. The selected
+   note's column (the highlighted band) is a drag handle: put the finger there and slide up or down –
+   about 10 px per step – with a bubble above the finger showing the note name. */
+const DRAG_STEP_PX = 10, TAP_SLOP_PX = 10;
 function bindStaffInput(host, ex) {
-  let drag = null;
+  let drag = null, press = null;
   host.classList.add('input-score');
   const tip = el('div', { class: 'drag-tip', hidden: true });
   document.body.append(tip);
+  const zone = el('div', { class: 'drag-zone', 'aria-hidden': 'true' });
+  // after every redraw, lay the drag handle over the highlighted column
+  const placeZone = () => {
+    const sel = host.querySelector('svg .sel');
+    if (!sel || ex.checked) { zone.hidden = true; return; }
+    if (!host.contains(zone)) host.append(zone);
+    const a = sel.getBoundingClientRect(), h = host.getBoundingClientRect();
+    Object.assign(zone.style, { left: (a.left - h.left) + 'px', top: (a.top - h.top) + 'px', width: a.width + 'px', height: a.height + 'px' });
+    zone.hidden = false;
+  };
+  new MutationObserver(() => requestAnimationFrame(placeZone)).observe(host, { childList: true });
+  window.addEventListener('resize', () => requestAnimationFrame(placeZone));
   const pt = e => {
     const svg = host.querySelector('svg');
     if (!svg) return null;
@@ -242,38 +268,45 @@ function bindStaffInput(host, ex) {
     const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
     return { svg, p: p.matrixTransform(m.inverse()) };
   };
-  const showTip = e => {
+  const hitAt = e => { const q = pt(e); return q && ex.hit ? locateHit(ex.hit, q.p) : null; };
+  const showTip = (x, y) => {
     const n = ex.getNote(ex.cursor);
     if (!n) { tip.hidden = true; return; }
     tip.textContent = noteName(n);
     tip.hidden = false;
-    tip.style.left = e.clientX + 'px';
-    tip.style.top = (e.clientY - 64) + 'px';
+    tip.style.left = x + 'px';
+    tip.style.top = (y - 64) + 'px';
   };
-  host.addEventListener('pointerdown', e => {
-    if (e.button !== 0 || !ex.hit) return;
-    const q = pt(e); if (!q) return;
-    const r = locateHit(ex.hit, q.p);
-    if (!r || !r.slot) return;
-    e.preventDefault();
+  const startDrag = (r, x, y, touch) => {
     ex.staffDown(r);
     if (r.slot.ghost || r.slot.locked || ex.checked) return;
-    drag = { id: r.slot.id, r, touch: e.pointerType !== 'mouse', y0: e.clientY, d0: r.dia, last: r.dia };
-    try { host.setPointerCapture(e.pointerId); } catch (err) { /* old browser */ }
-    if (drag.touch) showTip(e);
+    drag = { id: r.slot.id, r, touch, y0: y, d0: r.dia, last: r.dia };
+    if (touch) showTip(x, y);
+  };
+  const end = () => { drag = null; press = null; tip.hidden = true; };
+
+  host.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || !ex.hit) return;
+    const r = hitAt(e);
+    if (!r || !r.slot) return;
+    if (e.pointerType === 'mouse' || e.target === zone) {
+      e.preventDefault();
+      try { host.setPointerCapture(e.pointerId); } catch (err) { /* old browser */ }
+      startDrag(r, e.clientX, e.clientY, e.pointerType !== 'mouse');
+      return;
+    }
+    press = { r, x: e.clientX, y: e.clientY, t: Date.now() };   // touch outside the handle: tap or scroll
   });
   host.addEventListener('pointermove', e => {
-    if (!ex.hit) return;
+    if (press && Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_SLOP_PX) { press = null; return; }
     if (drag) {
-      e.preventDefault();
       let r;
       if (drag.touch) {
         const row = drag.r.row;
-        const dia = clamp(drag.d0 - Math.round((e.clientY - drag.y0) / DRAG_STEP_PX), row.minDia, row.maxDia);
-        r = { ...drag.r, dia };
+        r = { ...drag.r, dia: clamp(drag.d0 - Math.round((e.clientY - drag.y0) / DRAG_STEP_PX), row.minDia, row.maxDia) };
       } else {
-        const q = pt(e); if (!q) return;
-        r = locateHit(ex.hit, q.p);
+        if (!(e.buttons & 1)) { end(); return; }
+        r = hitAt(e);
         if (!r) return;
       }
       if (r.dia !== drag.last) {
@@ -281,15 +314,17 @@ function bindStaffInput(host, ex) {
         ex.staffDrag(drag.id, r);
         if (drag.touch && navigator.vibrate) { try { navigator.vibrate(4); } catch (err) { /* not allowed */ } }
       }
-      if (drag.touch) showTip(e);
+      if (drag.touch) showTip(e.clientX, e.clientY);
       return;
     }
-    if (e.pointerType === 'mouse') { const q = pt(e); if (q) drawPreview(q.svg, ex, locateHit(ex.hit, q.p)); }
+    if (e.pointerType === 'mouse' && ex.hit) { const q = pt(e); if (q) drawPreview(q.svg, ex, locateHit(ex.hit, q.p)); }
   });
-  const end = () => { drag = null; tip.hidden = true; };
-  host.addEventListener('pointerup', end);
+  host.addEventListener('pointerup', () => {
+    if (press && Date.now() - press.t < 600) { const r = press.r; press = null; ex.staffDown(r); return; }
+    end();
+  });
   host.addEventListener('pointercancel', end);
-  host.addEventListener('pointerleave', () => { const svg = host.querySelector('svg'); if (svg) clearPreview(svg); });
+  host.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') { const svg = host.querySelector('svg'); if (svg) clearPreview(svg); } });
 }
 
 /* ---------- pitch editing shared by all exercises ----------

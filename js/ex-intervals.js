@@ -175,7 +175,7 @@ function renderGrand(host, cols, opts = {}) {
   tr.setNoteStartX(ns); bs.setNoteStartX(ns);
   tr.setContext(ctx).draw(); bs.setContext(ctx).draw();
   ['brace', 'singleLeft', 'singleRight'].forEach(tp => new VF.StaveConnector(tr, bs).setType(tp).setContext(ctx).draw());
-  const evT = cols.map(c => ({ dur: 'w', note: c.note && c.note.d >= 28 ? c.note : null, color: c.color }));
+  const evT = cols.map(c => ({ dur: 'w', note: c.note && c.note.d >= 28 ? c.note : null, color: c.color, ph: !c.note && !c.locked ? 'note' : null }));
   const evB = cols.map(c => ({ dur: 'w', note: c.note && c.note.d < 28 ? c.note : null, color: c.color }));
   markAccidentals(evT, NO_SIG); markAccidentals(evB, NO_SIG);
   const nT = evT.map(e => mkNote(e, 'treble')), nB = evB.map(e => mkNote(e, 'bass'));
