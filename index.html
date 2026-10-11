@@ -152,6 +152,17 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spac
   .entry .icon-btn { height: 38px; min-width: 0; }
   .controls > .dock .palette .pal-b svg { width: 70px; height: auto; }
 }
+.how { margin-top: 12px; padding: 12px 14px; border-radius: 16px; background: var(--sheet); box-shadow: 0 1px 2px var(--shadow), inset 0 0 0 1px var(--rule); }
+.how summary { cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; list-style: none; }
+.how summary::-webkit-details-marker { display: none; }
+.how summary::after { content: '▾'; margin-left: auto; color: var(--ink-3); }
+.how[open] summary::after { content: '▴'; }
+.how-ico { color: var(--accent); } .how-ico svg { width: 18px; height: 18px; display: block; }
+.how ol { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 6px; font-size: var(--t-small); line-height: 1.5; color: var(--ink-2); }
+.how ol b { color: var(--ink); }
+.how-lex { margin: 10px 0 0; font-size: var(--t-small); color: var(--ink-2); }
+.linkish { border: 0; background: none; padding: 0; color: var(--accent); font-weight: 700; cursor: pointer; font-size: inherit; }
+.change-rhythm { width: 100%; }
 .card { background: var(--sheet); border-radius: 16px; box-shadow: 0 1px 2px var(--shadow), 0 6px 20px -12px var(--shadow-2); }
 .circle { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--rule); color: var(--ink); flex: none; }
 .circle svg { width: 16px; height: 16px; }

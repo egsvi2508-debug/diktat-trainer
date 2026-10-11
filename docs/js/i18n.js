@@ -2,6 +2,13 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    changeRhythm: 'Rhythmus ändern', backToNotes: 'Zurück zu den Tönen',
+    howTitle: 'So funktioniert das Melodiediktat',
+    how1: '<b>Anhören</b> – so oft du willst.',
+    how2: '<b>Rhythmus zuerst:</b> Schlag im System antippen und unten eine Rhythmusgruppe wählen. Ein 6/8-Takt hat zwei Schläge.',
+    how3: '<b>Dann die Töne:</b> Note antippen und mit den Tasten C–H (oder im System) die Tonhöhe setzen.',
+    how4: '<b>Rhythmus ändern?</b> Eine Note des Schlags antippen → „Rhythmus ändern“. Deine Töne bleiben erhalten.',
+    howLex: 'Welche Rhythmusgruppen im Diktat vorkommen, bestimmst du selbst im Rhythmus-Lexikon.', howLexLink: 'Zum Lexikon →',
     firstNoteChip: 'Erster Ton: {n}', dockFirstNote: 'Der erste Ton ist {n} – wähle jetzt seinen Rhythmus.',
     installLead: 'Mit einem Tipp auf den Startbildschirm – öffnet sich wie eine App, auch offline.', installBtn: 'App installieren',
     guideIosSafari: 'Öffne diese Seite in <b>Safari</b> (Apple erlaubt das Installieren nur dort).',
@@ -124,6 +131,13 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    changeRhythm: 'Change rhythm', backToNotes: 'Back to the notes',
+    howTitle: 'How the melody dictation works',
+    how1: '<b>Listen</b> – as often as you like.',
+    how2: '<b>Rhythm first:</b> tap a beat on the staff and pick a rhythm group below. A 6/8 bar has two beats.',
+    how3: '<b>Then the pitches:</b> tap a note and set it with the keys C–B (or on the staff).',
+    how4: '<b>Change a rhythm?</b> Tap a note of that beat → “Change rhythm”. Your pitches are kept.',
+    howLex: 'You decide which rhythm groups appear in the dictation in the rhythm lexicon.', howLexLink: 'Open the lexicon →',
     firstNoteChip: 'First note: {n}', dockFirstNote: 'The first note is {n} – now choose its rhythm.',
     installLead: 'One tap puts it on your home screen – opens like an app, offline too.', installBtn: 'Install app',
     guideIosSafari: 'Open this page in <b>Safari</b> (Apple only allows installing from there).',

@@ -225,6 +225,12 @@ const ExMel = {
     this.yoursBtn = playButton('playYours', () => this.events(this.ans.filter(b => b.pat), false));
     this.palette = el('div', { class: 'palette', role: 'group', 'aria-label': t('palLabel') });
     mainControls(this, P, this.playBtn);
+    const how = el('details', { class: 'how' }, el('summary', {}, el('span', { class: 'how-ico', html: ICON.ear }), t('howTitle')),
+      el('ol', {}, ['how1', 'how2', 'how3', 'how4'].map(k => el('li', { html: t(k) }))),
+      el('p', { class: 'how-lex' }, t('howLex'), ' ', el('button', { type: 'button', class: 'linkish', onclick: () => App.show('rhythmus') }, t('howLexLink'))));
+    how.open = store.get('howMel', true);
+    how.addEventListener('toggle', () => store.set('howMel', how.open));
+    P.info.before(how);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
     watchWidth(P.solHost, () => this.renderSolution());
@@ -326,6 +332,7 @@ const ExMel = {
   staffDown(r) {
     if (this.checked) return;
     const s = this.parseSlot(r.slot.id); if (!s) return;
+    this.pickFor = null;
     this.cur = s;
     if (s.k >= 0 && !this.S.rhythmOnly) {
       const i = this.cursor;
@@ -343,6 +350,7 @@ const ExMel = {
 
   applyPattern(id) {
     if (this.checked) return;
+    this.pickFor = null;
     const b = this.cur.b;
     const old = this.ans[b].notes;
     const ref = old[old.length - 1] || this.refNote(this.cursor) || this.task.start;
@@ -445,10 +453,16 @@ const ExMel = {
     });
     const where = t('dockBeat', { bar: Math.floor(this.cur.b / 2) + 1, beat: this.cur.b % 2 + 1 });
     if (this.checked) dockHide(P);
-    else if (this.cur.k < 0 || S.rhythmOnly) {
-      dockHint(P, where, this.cur.b === 0 && !this.ans[0].pat && !S.rhythmOnly ? t('dockFirstNote', { n: noteName(task.start) }) : t(this.ans[this.cur.b].pat ? 'dockRhythmChange' : 'dockRhythm'));
+    else if (this.cur.k < 0 || S.rhythmOnly || this.pickFor === this.cur.b) {
+      // choosing (or changing) the rhythm of this beat – pitches already set are kept
+      const changing = !!this.ans[this.cur.b].pat;
+      dockHint(P, where, this.cur.b === 0 && !changing && !S.rhythmOnly ? t('dockFirstNote', { n: noteName(task.start) }) : t(changing ? 'dockRhythmChange' : 'dockRhythm'));
       P.dock.append(this.palette);
-    } else dockNote(P, this, where + ' · ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
+      if (changing && !S.rhythmOnly) P.dock.append(btn('backToNotes', ICON.left, () => { this.pickFor = null; this.render(); }, 'btn-sec btn-sm'));
+    } else {
+      dockNote(P, this, where + ' · ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
+      P.dock.append(btn('changeRhythm', ICON.rhythm, () => { this.pickFor = this.cur.b; this.render(); }, 'btn-sec btn-sm change-rhythm'));
+    }
     syncControls(this);
   },
   renderSolution() {
