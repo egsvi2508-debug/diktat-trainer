@@ -225,8 +225,15 @@ function drawPreview(svg, ex, r) {
   g.appendChild(svgEl('ellipse', { cx: slot.cx, cy: y, rx: 5.8, ry: 4.3, transform: `rotate(-20 ${slot.cx} ${y})` }));
   svg.appendChild(g);
 }
+/* Tap a slot to place a note there; keep the finger (or mouse button) down and drag to change the pitch.
+   Mouse: the note follows the pointer exactly. Touch: relative – about every 10 px is one step – with a
+   bubble above the finger showing the note name, because the finger hides the note. */
+const DRAG_STEP_PX = 10;
 function bindStaffInput(host, ex) {
-  let dragId = null, lastDia = null;
+  let drag = null;
+  host.classList.add('input-score');
+  const tip = el('div', { class: 'drag-tip', hidden: true });
+  document.body.append(tip);
   const pt = e => {
     const svg = host.querySelector('svg');
     if (!svg) return null;
@@ -235,6 +242,14 @@ function bindStaffInput(host, ex) {
     const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY;
     return { svg, p: p.matrixTransform(m.inverse()) };
   };
+  const showTip = e => {
+    const n = ex.getNote(ex.cursor);
+    if (!n) { tip.hidden = true; return; }
+    tip.textContent = noteName(n);
+    tip.hidden = false;
+    tip.style.left = e.clientX + 'px';
+    tip.style.top = (e.clientY - 64) + 'px';
+  };
   host.addEventListener('pointerdown', e => {
     if (e.button !== 0 || !ex.hit) return;
     const q = pt(e); if (!q) return;
@@ -242,19 +257,36 @@ function bindStaffInput(host, ex) {
     if (!r || !r.slot) return;
     e.preventDefault();
     ex.staffDown(r);
-    if (e.pointerType === 'mouse' && !r.slot.ghost && !r.slot.locked) { dragId = r.slot.id; lastDia = r.dia; }
+    if (r.slot.ghost || r.slot.locked || ex.checked) return;
+    drag = { id: r.slot.id, r, touch: e.pointerType !== 'mouse', y0: e.clientY, d0: r.dia, last: r.dia };
+    try { host.setPointerCapture(e.pointerId); } catch (err) { /* old browser */ }
+    if (drag.touch) showTip(e);
   });
   host.addEventListener('pointermove', e => {
     if (!ex.hit) return;
-    const q = pt(e); if (!q) return;
-    const r = locateHit(ex.hit, q.p);
-    if (dragId != null && (e.buttons & 1)) {
-      if (r && r.dia !== lastDia) { lastDia = r.dia; ex.staffDrag(dragId, r); }
+    if (drag) {
+      e.preventDefault();
+      let r;
+      if (drag.touch) {
+        const row = drag.r.row;
+        const dia = clamp(drag.d0 - Math.round((e.clientY - drag.y0) / DRAG_STEP_PX), row.minDia, row.maxDia);
+        r = { ...drag.r, dia };
+      } else {
+        const q = pt(e); if (!q) return;
+        r = locateHit(ex.hit, q.p);
+        if (!r) return;
+      }
+      if (r.dia !== drag.last) {
+        drag.last = r.dia;
+        ex.staffDrag(drag.id, r);
+        if (drag.touch && navigator.vibrate) { try { navigator.vibrate(4); } catch (err) { /* not allowed */ } }
+      }
+      if (drag.touch) showTip(e);
       return;
     }
-    if (e.pointerType === 'mouse') drawPreview(q.svg, ex, r);
+    if (e.pointerType === 'mouse') { const q = pt(e); if (q) drawPreview(q.svg, ex, locateHit(ex.hit, q.p)); }
   });
-  const end = () => { dragId = null; };
+  const end = () => { drag = null; tip.hidden = true; };
   host.addEventListener('pointerup', end);
   host.addEventListener('pointercancel', end);
   host.addEventListener('pointerleave', () => { const svg = host.querySelector('svg'); if (svg) clearPreview(svg); });

@@ -203,6 +203,11 @@ h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 700; letter-spac
 .score { color: var(--ink); min-height: 110px; touch-action: manipulation; outline: none; user-select: none; -webkit-user-select: none; cursor: pointer; }
 .score:focus-visible { outline: 2.5px solid var(--accent); outline-offset: -3px; border-radius: 14px; }
 .score svg { display: block; overflow: visible; max-width: 100%; height: auto; }
+/* the staff you write on takes the finger for dragging (scroll the page outside the staff) */
+.input-score { touch-action: none; }
+.drag-tip { position: fixed; z-index: 50; transform: translateX(-50%); pointer-events: none; padding: 6px 12px; border-radius: 12px;
+  background: var(--ink); color: var(--sheet); font-family: var(--font-display); font-weight: 700; font-size: 20px; box-shadow: 0 8px 20px -8px var(--shadow-2); }
+.drag-tip[hidden] { display: none; }
 
 /* dock: what you can do right now, inside the sheet */
 .dock { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 14px; padding: 12px 14px; background: var(--band); }
