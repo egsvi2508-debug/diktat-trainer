@@ -111,8 +111,7 @@ function mainControls(ex, P, playBtn) {
   const act = el('button', { type: 'button', class: 'btn btn-big btn-ink btn-action' }, el('span', { class: 'ico' }), el('span', { class: 'lbl' }));
   act.addEventListener('click', () => {
     if (ex.checked) ex.newTask(true);
-    else if (ex.hasInput()) ex.check();
-    else ex.reveal();
+    else { if (ex.hasInput()) ex.check(); else ex.reveal(); if (ex.checked) Backend.exerciseDone(ex.id); }
   });
   ex.actBtn = act;
   playBtn.classList.add('btn-big');

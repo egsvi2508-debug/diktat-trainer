@@ -28,3 +28,10 @@ python3 build_webapp.py
 This writes `docs/` (the website GitHub Pages serves) and `Satzlehre-Uebungen.html` (a single offline file).
 Piano sound: [Salamander Grand Piano](https://archive.org/details/SalamanderGrandPianoV3) by Alexander Holm (CC BY 3.0).
 Notation by [VexFlow](https://www.vexflow.com) (MIT); fonts Wix Madefor Display and Text (SIL OFL).
+
+## Feedback & anonymous usage counts (optional)
+Off until `projectId` and `apiKey` are filled in at the top of `js/backend.js`.
+1. Create a Firebase project (Google Analytics not needed) → Firestore Database → production mode, EU location.
+2. Firestore → Rules: paste `firestore.rules` → Publish.
+3. Project settings → add a Web app → copy `projectId` and `apiKey` into `js/backend.js`, run `python3 build_webapp.py`, push.
+4. Read results in the Firebase console: `days/<YYYY-MM-DD>` (devices, opens, ex_*) and `feedback`.

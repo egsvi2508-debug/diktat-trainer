@@ -2,6 +2,15 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    fbSection: 'Mitgestalten', fbCardTitle: 'Feedback & Ideen', fbCardText: 'Was fehlt dir, was stört, was hilft? Sag es uns – so wird das Tool für alle besser.',
+    fbTitle: 'Feedback senden', fbIntro: 'Das Tool ist für alle im Kurs gedacht. Deine Idee, ein Fehler oder ein Lob hilft, es besser zu machen.',
+    fbType: 'Art', fbIdea: 'Idee', fbBug: 'Fehler', fbPraise: 'Lob', fbText: 'Deine Nachricht', fbSend: 'Senden',
+    fbPlaceholder: 'z. B. „Eine Übung zu Quintfallsequenzen wäre super“ oder „Bei Terzen im Bassschlüssel …“',
+    fbAnon: 'Anonym – es wird nur dein Text gesendet (und welche Übung offen war). Schreib keine persönlichen Daten hinein.',
+    fbEmpty: 'Schreib zuerst ein paar Worte.', fbSending: 'Wird gesendet …', fbError: 'Senden hat nicht geklappt – bist du online? Versuch es nochmal.',
+    fbThanks: 'Danke!', fbThanksText: 'Dein Feedback ist angekommen.',
+    privacy: 'Datenschutz', statsShare: 'Anonyme Nutzungszählung erlauben',
+    statsShareInfo: 'Zählt nur, wie oft die App und welche Übungen genutzt werden – ohne Namen, ohne Kennung, ohne Cookies. Hilft zu sehen, ob das Tool im Kurs gebraucht wird.',
     newWithGroups: 'Neue Aufgabe – nur mit den Rhythmusgruppen, die du im Lexikon gewählt hast.',
     howShort: 'Anleitung', howOpen: 'Anleitung anzeigen', howHide: 'Nicht mehr automatisch zeigen', howGo: 'Los geht\'s',
     changeRhythm: 'Rhythmus ändern', backToNotes: 'Zurück zu den Tönen',
@@ -133,6 +142,15 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    fbSection: 'Help shape it', fbCardTitle: 'Feedback & ideas', fbCardText: 'What is missing, what bothers you, what helps? Tell us – it makes the tool better for everyone.',
+    fbTitle: 'Send feedback', fbIntro: 'This tool is meant for everyone in the class. Your idea, a bug or some praise helps to improve it.',
+    fbType: 'Type', fbIdea: 'Idea', fbBug: 'Bug', fbPraise: 'Praise', fbText: 'Your message', fbSend: 'Send',
+    fbPlaceholder: 'e.g. “An exercise on circle-of-fifths sequences would be great” or “With thirds in bass clef …”',
+    fbAnon: 'Anonymous – only your text is sent (and which exercise was open). Please do not include personal data.',
+    fbEmpty: 'Write a few words first.', fbSending: 'Sending …', fbError: 'Sending failed – are you online? Please try again.',
+    fbThanks: 'Thank you!', fbThanksText: 'Your feedback has arrived.',
+    privacy: 'Privacy', statsShare: 'Allow anonymous usage counting',
+    statsShareInfo: 'Only counts how often the app and which exercises are used – no names, no identifier, no cookies. Helps to see whether the tool is used in class.',
     newWithGroups: 'New exercise – using only the rhythm groups you chose in the lexicon.',
     howShort: 'Instructions', howOpen: 'Show instructions', howHide: 'Don\'t show automatically again', howGo: 'Let\'s go',
     changeRhythm: 'Change rhythm', backToNotes: 'Back to the notes',

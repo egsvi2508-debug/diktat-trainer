@@ -196,6 +196,7 @@ const ExLex = {
     if (q.answered) return;
     if (!this.selected().includes(id)) return;
     q.answered = true; q.n++;
+    Backend.exerciseDone('lex');
     const ok = id === q.cur;
     if (ok) q.ok++;
     card.classList.add(ok ? 'qa-ok' : 'qa-bad');

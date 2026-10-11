@@ -40,6 +40,7 @@ const App = {
     // the install signal is caught by a tiny script at the very top of the page (see build_webapp.py)
     if (!('__installPrompt' in window)) { window.__installPrompt = null; addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installPrompt = e; document.dispatchEvent(new Event('installready')); }); }
     window.addEventListener('appinstalled', () => { window.__installPrompt = null; store.set('installHide', true); if (!this.active) this.renderHome(); });
+    Backend.appStarted();
     const h = (location.hash || '').slice(1);
     this.show(h === 'start' || this.list.some(it => it.hash === h) ? h : 'start');
     window.addEventListener('hashchange', () => {
@@ -128,11 +129,16 @@ const App = {
     const paper = el('div', { class: 'card paper-tip' },
       el('span', { class: 'paper-ico', html: ICON.pencil }),
       el('p', {}, el('b', {}, t('paperTitle')), ' ', t('paperText')));
+    const fb = Backend.on() ? el('button', { type: 'button', class: 'card feedback-card', onclick: () => this.openFeedback() },
+      el('span', { class: 'paper-ico fb-tint', html: ICON.chat }),
+      el('span', {}, el('b', {}, t('fbCardTitle')), el('span', { class: 'fb-card-sub' }, t('fbCardText'))),
+      el('span', { class: 'circle', html: ICON.right })) : '';
     this.home.replaceChildren(
       paper,
       this.installCard(),
       el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
-      el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards);
+      el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards,
+      fb ? el('div', { class: 'sec-h' }, el('h2', {}, t('fbSection'))) : '', fb);
   },
 
   /* ---------- header + sub-switch for the current screen ---------- */
@@ -184,10 +190,47 @@ const App = {
       vol,
       segControl('g-sens', 'dragSens', [[1, t('sensFine')], [2, t('sensMid')], [3, t('sensFast')]], store.get('dragSens', 2), v => store.set('dragSens', v)),
       toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
+      Backend.on() ? el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('fbSection')),
+        el('div', { class: 'row' }, btn('fbCardTitle', ICON.chat, () => { this.menu.d.close(); this.openFeedback(); }, 'btn-sec btn-sm'))) : '',
+      Backend.on() ? toggleGroup('privacy', toggleControl('g-stats', 'statsShare', store.get('shareStats', true), v => store.set('shareStats', v)),
+        el('p', { class: 'hint' }, t('statsShareInfo'))) : '',
       el('div', { class: 'field keys-field' }, el('span', { class: 'field-lbl' }, t('keysTitle')), keys),
       el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))
     );
     $$('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
+  },
+
+  /* feedback: idea / bug / praise + text, sent anonymously */
+  openFeedback() {
+    if (this.fbDlg) this.fbDlg.d.remove();
+    const g = this.fbDlg = makeDialog(t('fbTitle'));
+    let type = 'idea';
+    const ta = el('textarea', { id: 'fb-text', rows: '6', maxlength: '2000', placeholder: t('fbPlaceholder'), class: 'fb-text' });
+    const status = el('p', { class: 'hint fb-status', role: 'status' });
+    const cur = this.active ? this.active.id : '';
+    ta.addEventListener('input', () => { if (status.textContent === t('fbEmpty')) status.textContent = ''; });
+    g.body.append(
+      el('p', { class: 'hint' }, t('fbIntro')),
+      segControl('fb-type', 'fbType', [['idea', t('fbIdea')], ['bug', t('fbBug')], ['praise', t('fbPraise')]], type, v => { type = v; }),
+      el('div', { class: 'field' }, el('label', { class: 'field-lbl', for: 'fb-text' }, t('fbText')), ta),
+      el('p', { class: 'hint' }, t('fbAnon')), status);
+    const send = btn('fbSend', ICON.next, null, 'btn-ink');
+    $('.dlg-foot', g.d).replaceChildren(send);
+    send.onclick = async () => {
+      const text = ta.value.trim();
+      if (!text) { status.textContent = t('fbEmpty'); ta.focus(); return; }
+      send.disabled = true; status.textContent = t('fbSending');
+      try {
+        await Backend.sendFeedback({ type, text, exercise: cur });
+        g.body.replaceChildren(el('div', { class: 'fb-done' }, el('span', { class: 'fb-done-ico', html: ICON.check }), el('h4', {}, t('fbThanks')), el('p', { class: 'hint' }, t('fbThanksText'))));
+        $('.lbl', send).textContent = t('done'); $('.ico', send).innerHTML = ICON.check;
+        send.disabled = false; send.onclick = () => g.d.close();
+      } catch (err) {
+        send.disabled = false; status.textContent = t('fbError');
+      }
+    };
+    g.open();
+    setTimeout(() => ta.focus(), 50);
   },
 
   openSettings() {
