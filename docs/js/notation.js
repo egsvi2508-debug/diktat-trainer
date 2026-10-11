@@ -310,18 +310,23 @@ function pitchKey(e, ex) {
   return false;
 }
 
-/* the small tools shown in the dock for the selected note: ▲ ▼ · ♭ ♮ ♯ · ✕
+/* note-name keypad for the dock – works on a phone without hitting lines and spaces:
+   C D E F G A H sets the selected note (nearest octave) and moves on; then octave, accidentals, delete.
    ♭ and ♯ step the accidental, so pressing ♯ twice gives a double sharp */
 function noteTools(ex, opts = {}) {
   const b = (html, titleKey, fn, cls = '') => el('button', { class: 'icon-btn ' + cls, type: 'button', title: t(titleKey), 'aria-label': t(titleKey), html, onclick: fn });
+  const names = LANG === 'de' ? ['C', 'D', 'E', 'F', 'G', 'A', 'H'] : ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const keys = el('div', { class: 'keypad', role: 'group', 'aria-label': t('tbLabel') },
+    names.map((n, step) => el('button', { type: 'button', class: 'key', onclick: () => ex.cmd('letter', { step }) }, n)));
   const acc = (sym, titleKey, fn) => b(`<span class="acc">${sym}</span>`, titleKey, fn);
-  return el('div', { class: 'tools', role: 'toolbar', 'aria-label': t('tbLabel') },
-    b(ICON.up, 'tbUp', () => ex.cmd('up')),
-    b(ICON.down, 'tbDown', () => ex.cmd('down')),
+  const tools = el('div', { class: 'tools' },
+    b(`${ICON.down}<span class="oct">8</span>`, 'tbOctDown', () => ex.cmd('octDown'), 'oct-btn'),
+    b(`${ICON.up}<span class="oct">8</span>`, 'tbOctUp', () => ex.cmd('octUp'), 'oct-btn'),
     acc('♭', 'tbFlat', () => ex.cmd('accDown')),
     acc('♮', 'tbNat', () => ex.cmd('acc', 0)),
     acc('♯', 'tbSharp', () => ex.cmd('accUp')),
     b(ICON.del, opts.clearKey || 'tbClear', () => ex.cmd('clear'), 'icon-del'));
+  return el('div', { class: 'entry' }, keys, tools);
 }
 
 /* Keep a score in sync with its container width */

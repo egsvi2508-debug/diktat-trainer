@@ -16,10 +16,8 @@ function makeFlight(kind) {
       const P = this.P = panelShell(this);
       const S = this.S;
       P.settingsBody.append(
-        segControl(id + '-bars', 'bars', [[4, '4'], [8, '8']], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
         segControl(id + '-mode', 'flMode', [['free', t('flFree')], ['key', t('flKey')]], S.mode, v => { S.mode = v; this.save(); this.newTask(); }),
         segControl(id + '-clef', 'clefLbl', [['treble', t('clefTreble')], ['bass', t('clefBass')]], S.clef, v => { S.clef = v; this.save(); this.newTask(); }),
-        sliderControl(id + '-tempo', 'tempoQ', 30, 100, 2, S.tempo, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }),
         toggleGroup('options',
           toggleControl(id + '-limit', 'flLimit', S.limit, v => { S.limit = v; this.save(); this.render(); }),
           toggleControl(id + '-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); }))
@@ -181,8 +179,9 @@ function makeFlight(kind) {
       const first = this.task.notes[0];
       P.info.replaceChildren(
         this.task.key ? soundChip(keyName(this.task.key), () => cadenceEvents(this.task.key)) : chip(t('flFreeChip'), 'chip-strong'),
-        soundChip(t('startChip', { n: noteName(first) }), () => [{ t: 0, midi: Note.midi(first), dur: 1.6 }]),
-        chip('♩ = ' + S.tempo, 'chip-muted'));
+        soundChip(t('startChip', { n: noteName(first) }), () => [{ t: 0, midi: Note.midi(first), dur: 1.6 }]));
+      P.opts.replaceChildren(lengthControl('lenBars', [2, 4, 8, 12], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
+        tempoControl('tempoLbl', S.tempo, 30, 120, 2, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }));
       const marks = this.res ? this.res.marks : null;
       const measures = this.measures(this.ans, i => i === 0 ? 'currentColor' : marks ? (marks[i] === 'ok' ? C.ok : C.bad) : C.user, true);
       this.hit = renderLines(P.score, {
@@ -193,8 +192,7 @@ function makeFlight(kind) {
       if (this.checked) dockHide(P);
       else {
         const lbl = t('dockNoteN', { i: this.cursor + 1, n: this.ans.length });
-        if (this.ans[this.cursor]) dockNote(P, this, lbl, this.ans[this.cursor]);
-        else dockHint(P, lbl, t('dockTapStaff'));
+        dockNote(P, this, lbl, this.ans[this.cursor]);
       }
       this.playBtn.refresh();
       syncControls(this);

@@ -50,6 +50,24 @@ function soundChip(text, getEvents) {
   return b;
 }
 
+/* length picker shown right on the exercise screen (bars or chords) */
+function lengthControl(labelKey, values, value, onChange) {
+  const seg = el('div', { class: 'seg seg-sm', role: 'radiogroup', 'aria-label': t(labelKey) },
+    values.map(v => el('button', { type: 'button', class: 'seg-b', role: 'radio', 'aria-checked': String(v === value), onclick: () => { if (v !== value) onChange(v); } }, String(v))));
+  return el('div', { class: 'len' }, el('span', { class: 'len-lbl' }, t(labelKey)), seg);
+}
+
+/* tempo stepper shown right on the exercise screen: − value + */
+function tempoControl(labelKey, value, min, max, step, fmt, onChange) {
+  const out = el('output', { class: 'tempo-val' }, fmt(value));
+  let v = value;
+  const set = d => { const nv = clamp(Math.round((v + d) * 100) / 100, min, max); if (nv === v) return; v = nv; out.textContent = fmt(v); onChange(v); };
+  return el('div', { class: 'len' }, el('span', { class: 'len-lbl' }, t(labelKey)),
+    el('div', { class: 'stepper' },
+      el('button', { type: 'button', class: 'seg-b', 'aria-label': t('slower'), onclick: () => set(-step) }, '−'), out,
+      el('button', { type: 'button', class: 'seg-b', 'aria-label': t('faster'), onclick: () => set(step) }, '+')));
+}
+
 /* modal sheet (bottom sheet on phones, card on desktop) */
 function makeDialog(title) {
   const body = el('div', { class: 'dlg-body' });
@@ -69,6 +87,7 @@ function panelShell(ex) {
   const P = {
     hint: el('p', { class: 'hint-line' }, t(ex.descKey)),
     info: el('div', { class: 'info' }),
+    opts: el('div', { class: 'opts' }),
     score: el('div', { class: 'score', tabindex: '0', 'aria-label': t('scoreLabel') }),
     dock: el('div', { class: 'dock' }),
     controls: el('div', { class: 'controls' }),
@@ -78,7 +97,7 @@ function panelShell(ex) {
   };
   P.sheet = el('div', { class: 'sheet' }, P.score, P.dock);
   P.solWrap = el('div', { class: 'sol-wrap', hidden: true }, el('h3', { class: 'sol-h' }, t('solution')), el('div', { class: 'sheet' }, P.solHost));
-  root.append(P.info, P.sheet, P.controls, P.feedback, P.solWrap);
+  root.append(P.info, P.opts, P.sheet, P.controls, P.feedback, P.solWrap);
   return P;
 }
 

@@ -88,7 +88,16 @@ const ExInt = {
     this.render();
   },
   clearSlot() { this.ans = null; this.render(); },
-  cmd(c, arg) { SeqEdit.cmd(this, c, arg); },
+  cmd(c, arg) {
+    // a note name lands on the nearest such note above (or below) the given note; octave buttons go further
+    if (c === 'letter' && !this.checked) {
+      const g = this.task.given, gs = mod(g.d, 7);
+      const d = this.task.up ? g.d + (mod(arg.step - gs, 7) || 7) : g.d - (mod(gs - arg.step, 7) || 7);
+      this.setNote(0, { d, a: this.defaultAlt(0, d) });
+      return;
+    }
+    SeqEdit.cmd(this, c, arg);
+  },
   staffDown(r) {
     if (r.slot.id !== 'ans' || this.checked) return;
     this.setNote(0, { d: r.dia, a: this.defaultAlt(0, r.dia) });
@@ -141,8 +150,7 @@ const ExInt = {
     }
     this.hit = renderGrand(P.score, cols, { sel: this.checked ? null : 'ans' });
     if (this.checked) dockHide(P);
-    else if (this.ans) dockNote(P, this, t('dockYourNote'), this.ans);
-    else dockHint(P, '', t('intDockHint'));
+    else dockNote(P, this, t('dockYourNote'), this.ans);
     syncControls(this);
   },
 

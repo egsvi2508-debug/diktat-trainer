@@ -214,10 +214,8 @@ const ExMel = {
     const P = this.P = panelShell(this);
     const S = this.S;
     P.settingsBody.append(
-      segControl('mel-bars', 'bars', [[4, '4'], [8, '8'], [12, '12']], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
       segControl('mel-mode', 'modeLbl', [['maj', t('major')], ['min', t('minor')], ['both', t('both')]], S.mode, v => { S.mode = v; this.save(); }),
       segControl('mel-acc', 'maxAcc', [0, 1, 2, 3, 4, 5].map(n => [n, String(n)]), S.maxAcc, v => { S.maxAcc = v; this.save(); }),
-      sliderControl('mel-tempo', 'tempoDQ', 36, 84, 2, S.tempo, v => '♩. = ' + v, v => { S.tempo = v; this.save(); }),
       toggleGroup('options',
         toggleControl('mel-ronly', 'rhythmOnly', S.rhythmOnly, v => { S.rhythmOnly = v; this.save(); this.newTask(); }),
         toggleControl('mel-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); }),
@@ -320,7 +318,11 @@ const ExMel = {
     if (this.S.rhythmOnly) return;
     if (this.cur.k < 0) setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('melPickRhythm'))}</span>`);
   },
-  cmd(c, arg) { SeqEdit.cmd(this, c, arg); },
+  cmd(c, arg) {
+    const before = this.cursor;
+    SeqEdit.cmd(this, c, arg);
+    if (c === 'letter' && !this.checked && this.cursor === before && before < this.positions().length - 1) { this.cur = this.positions()[before + 1]; this.render(); }
+  },
   parseSlot(id) { const m = /^b(\d+)(?:n(\d+))?$/.exec(id); return m ? { b: +m[1], k: m[2] == null ? -1 : +m[2] } : null; },
   staffDown(r) {
     if (this.checked) return;
@@ -428,6 +430,8 @@ const ExMel = {
       soundChip(keyName(task.key), () => cadenceEvents(task.key)),
       soundChip(t('startChip', { n: noteName(task.start) }), () => [{ t: 0, midi: Note.midi(task.start), dur: 1.6 }]));
     else P.info.replaceChildren(chip(t('rhythmOnly'), 'chip-strong'));
+    P.opts.replaceChildren(lengthControl('lenBars', [2, 4, 8, 12, 16], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
+      tempoControl('tempoLbl', S.tempo, 30, 96, 2, v => '♩. = ' + v, v => { S.tempo = v; this.save(); }));
     const res = this.res;
     const measures = this.measuresFor(this.ans, (b, k) => {
       if (!res) return k < 0 ? null : { color: C.user };

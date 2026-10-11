@@ -2,6 +2,12 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    tempoLbl: 'Tempo', perChord: 'Pro Akkord', slower: 'langsamer', faster: 'schneller',
+    harDesc2: 'Schritt 2: Tipp einen Tonnamen oder ins System – Tenor, Alt und Sopran für jeden Akkord.',
+    lenBars: 'Takte', lenChords: 'Akkorde', upperStart: 'Oberstimmen ergänzen',
+    upperOffer: 'Als Zusatzschritt kannst du jetzt Tenor, Alt und Sopran notieren.', upperStep: 'Schritt 2: Oberstimmen',
+    upperRes: '{ok} von {n} Tönen in Tenor, Alt und Sopran richtig.', voiceLbl: 'Stimme', voiceS: 'Sopran', voiceA: 'Alt', voiceT: 'Tenor',
+    dockTapUpper: 'Tippe ins System – oben = Sopran, Mitte = Alt, Bassschlüssel = Tenor.',
     navHome: 'Start', navInt: 'Intervalle', navMel: 'Melodie', navFlug: 'Im Flug', navHar: 'Harmonie', back: 'Zurück',
     greet: 'Hallo!', greetSub: 'Was übst du heute?', secExercises: 'Übungen', secAll: 'Alle Übungen',
     todayLbl: 'Heute geübt', continueWith: 'Weiter mit {ex}', notYet: 'Noch nicht geübt',
@@ -105,6 +111,12 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    tempoLbl: 'Tempo', perChord: 'Per chord', slower: 'slower', faster: 'faster',
+    harDesc2: 'Step 2: tap a note name or the staff – tenor, alto and soprano for each chord.',
+    lenBars: 'Bars', lenChords: 'Chords', upperStart: 'Add the upper voices',
+    upperOffer: 'As an extra step you can now notate tenor, alto and soprano.', upperStep: 'Step 2: upper voices',
+    upperRes: '{ok} of {n} notes in tenor, alto and soprano correct.', voiceLbl: 'Voice', voiceS: 'Soprano', voiceA: 'Alto', voiceT: 'Tenor',
+    dockTapUpper: 'Tap the staff – high = soprano, middle = alto, bass clef = tenor.',
     navHome: 'Home', navInt: 'Intervals', navMel: 'Melody', navFlug: 'On the fly', navHar: 'Harmony', back: 'Back',
     greet: 'Hello!', greetSub: 'What will you practise today?', secExercises: 'Exercises', secAll: 'All exercises',
     todayLbl: 'Practised today', continueWith: 'Continue with {ex}', notYet: 'Not practised yet',

@@ -184,34 +184,59 @@ const Harmony = (() => {
     return { chords, notes };
   }
 
-  function genIds(S, key) {
+  /* one phrase: starts on I (or continues after the previous phrase's I), ends with a cadence:
+     'auth' = (I6/4) V(7) I, 'half' = (I6/4) V. Chords already used get less likely, so phrases vary. */
+  function genPhrase(S, key, len, end, used, cont) {
     const mi = key.minor ? 1 : 0;
     const allow = id => VOC[id].q[mi] && (VOC[id].need || []).every(f => S[f]);
-    for (let tries = 0; tries < 600; tries++) {
+    const midOk = id => allow(id) && id !== 'I64' && id !== 'V' && id !== 'V7';
+    for (let tries = 0; tries < 800; tries++) {
       const tail = [];
-      if (S.inv && S.n >= 5 && chance(0.4)) tail.push('I64');
-      tail.push(S.sev && chance(0.5) ? 'V7' : 'V', 'I');
-      const seq = ['I'];
-      const mid = S.n - 1 - tail.length;
+      if (S.inv && len >= 5 && chance(0.4)) tail.push('I64');
+      if (end === 'auth') tail.push(S.sev && chance(0.5) ? 'V7' : 'V', 'I'); else tail.push('V');
+      const seq = [cont || 'I'];
+      const mid = len - (cont ? 0 : 1) - tail.length;
+      const count = { ...used };
       let ok = true;
       for (let i = 0; i < mid; i++) {
-        // root-position dominants are kept for the cadence, so the progression resolves V–I only once
-        const nexts = Object.entries(NEXT[seq[seq.length - 1]]).filter(([id]) => allow(id) && id !== 'I64' && id !== 'V' && id !== 'V7' && id !== seq[seq.length - 1]);
+        const prev = seq[seq.length - 1];
+        // root-position dominants are kept for cadences; look one step ahead so the walk never gets stuck
+        const lastMid = i === mid - 1;
+        const nexts = Object.entries(NEXT[prev]).filter(([id]) => midOk(id) && id !== prev
+          && (lastMid ? !!NEXT[id][tail[0]] : Object.keys(NEXT[id]).some(nx => midOk(nx) && nx !== id)))
+          .map(([id, w]) => [id, w * Math.pow(0.35, count[id] || 0)]);
         if (!nexts.length) { ok = false; break; }
-        seq.push(wpick(nexts));
+        const id = wpick(nexts);
+        seq.push(id); count[id] = (count[id] || 0) + 1;
       }
       if (!ok || !NEXT[seq[seq.length - 1]][tail[0]]) continue;
       const full = seq.concat(tail);
       if (full.some((id, i) => i > 0 && id === full[i - 1])) continue;
-      return full;
+      return cont ? full.slice(1) : full;
     }
-    return ['I', 'IV', 'V', 'I'];
+    return null;
+  }
+  /* up to 8 chords: one phrase. Longer: 8-chord phrases like a period – half cadence, then full cadences. */
+  function genIds(S, key) {
+    if (S.n <= 8) return genPhrase(S, key, S.n, 'auth', {}, null);
+    const ids = [], used = {};
+    for (let k = 0, left = S.n; left > 0; k++) {
+      const len = left - 8 < 4 ? left : 8;
+      const end = left === len ? 'auth' : (k % 2 === 0 ? 'half' : 'auth');
+      const ph = genPhrase(S, key, len, end, used, ids[ids.length - 1] === 'I' ? 'I' : null);
+      if (!ph) return null;
+      ph.forEach(id => { used[id] = (used[id] || 0) + 1; });
+      ids.push(...ph);
+      left -= len;
+    }
+    return ids;
   }
 
   function generate(S) {
     for (let k = 0; k < 40; k++) {
       const key = randomKey(S.maxAcc, S.mode, 'har');
       const ids = genIds(S, key);
+      if (!ids) continue;
       const res = voiceProgression(key, ids);
       if (res) return { key, ids, ...res };
     }
@@ -297,15 +322,20 @@ function drawLabel(svg, x, y, lab, cls) {
   g.setAttribute('transform', `translate(${(x - w / 2).toFixed(1)} ${y})`);
 }
 
-/* four-part grand staff with analysis rows */
-function renderChorale(host, task, show, colors) {
-  const n = task.notes.length;
+/* four-part grand staff with analysis rows.
+   opts.notes: chords to draw (voices may be null) · opts.color(i, v) · opts.sel: chord to highlight.
+   Returns tap targets (one treble and one bass row per system) like renderLines. */
+function renderChorale(host, task, show, opts = {}) {
+  const chords = opts.notes || task.notes;
+  const n = chords.length;
+  const hit = { rows: [] };
   const scale = autoScale(host.clientWidth);
   const Wfull = Math.max(260, host.clientWidth) / scale, avail = Wfull - 16;
   const probe = new VF.Stave(0, 0, 300).addClef('bass').addKeySignature(task.key.vf);
   const extra = probe.getNoteStartX() - new VF.Stave(0, 0, 300).getNoteStartX() + 14;
   const nm = Math.ceil(n / 2);
-  const mpl = clamp(Math.floor((avail - extra) / (Wfull < 440 ? 96 : 118)), 1, 4);
+  let mpl = clamp(Math.floor((avail - extra) / (Wfull < 440 ? 96 : 118)), 1, 4);
+  mpl = Math.ceil(nm / Math.ceil(nm / mpl));   // even lines: 2+2, not 3+1
   const lines = [];
   for (let i = 0; i < nm; i += mpl) lines.push(Array.from({ length: Math.min(mpl, nm - i) }, (_, k) => i + k));
   const nRows = (show.G ? 1 : 0) + (show.S ? 1 : 0) + (show.F ? 1 : 0);
@@ -316,6 +346,8 @@ function renderChorale(host, task, show, colors) {
   lines.forEach((ms, li) => {
     const y0 = 2 + li * rowH;
     let x = 8;
+    const slots = [];
+    let trTop = 0, bsTop = 0, midY = 0;
     ms.forEach((mIdx, mi) => {
       const w = mi === 0 ? mw + extra : mw;
       const tr = new VF.Stave(x, y0, w), bs = new VF.Stave(x, y0 + 100, w);
@@ -327,17 +359,24 @@ function renderChorale(host, task, show, colors) {
       if (mi === 0) ['brace', 'singleLeft'].forEach(tp => new VF.StaveConnector(tr, bs).setType(tp).setContext(ctx).draw());
       new VF.StaveConnector(tr, bs).setType('singleRight').setContext(ctx).draw();
       const idx = [mIdx * 2, mIdx * 2 + 1].filter(i => i < n);
-      const mk = (voice, clef, stem, color) => {
-        const evs = idx.map(i => ({ dur: 'h', note: task.notes[i][voice], stem, color }));
+      const mk = (voice, clef, stem) => {
+        const evs = idx.map(i => ({ dur: 'h', note: chords[i][voice], stem, color: opts.color ? opts.color(i, voice) : undefined }));
         if (idx.length === 1) evs.push({ dur: 'h', note: null });
         markAccidentals(evs, sig);
         return evs.map(e => mkNote(e, clef));
       };
-      const nS = mk(3, 'treble', 1), nA = mk(2, 'treble', -1), nT = mk(1, 'bass', 1), nB = mk(0, 'bass', -1, colors.bass);
+      const nS = mk(3, 'treble', 1), nA = mk(2, 'treble', -1), nT = mk(1, 'bass', 1), nB = mk(0, 'bass', -1);
       const V = notes => new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables(notes);
       const vS = V(nS), vA = V(nA), vT = V(nT), vB = V(nB);
       new VF.Formatter().joinVoices([vS, vA]).joinVoices([vT, vB]).format([vS, vA, vT, vB], Math.max(40, tr.getNoteEndX() - ns - 14));
       vS.draw(ctx, tr); vA.draw(ctx, tr); vT.draw(ctx, bs); vB.draw(ctx, bs);
+      trTop = tr.getYForLine(0); bsTop = bs.getYForLine(0); midY = (tr.getYForLine(4) + bsTop) / 2;
+      const cxs = idx.map((i, k) => (nB[k].getNoteHeadBeginX() + nB[k].getNoteHeadEndX()) / 2);
+      idx.forEach((i, k) => {
+        const x0 = k === 0 ? ns - 6 : (cxs[k - 1] + cxs[k]) / 2, x1 = k === idx.length - 1 ? tr.getNoteEndX() : (cxs[k] + cxs[k + 1]) / 2;
+        slots.push({ id: 'c' + i, x0, x1, cx: cxs[k], locked: i === 0 });
+        if (opts.sel === i) behind(svg, svgEl('rect', { x: x0 + 2, y: trTop - 30, width: x1 - x0 - 4, height: bs.getYForLine(4) - trTop + 60, rx: 10, class: 'sel' }));
+      });
       let ly = bs.getYForLine(4) + 36;
       idx.forEach((i, k) => {
         const cx = (nB[k].getNoteHeadBeginX() + nB[k].getNoteHeadEndX()) / 2;
@@ -365,29 +404,39 @@ function renderChorale(host, task, show, colors) {
       }
       x += w;
     });
+    hit.rows.push({ topY: trTop, topDia: 38, half: 5, yMin: li === 0 ? -100 : y0 - 10, yMax: midY, minDia: 24, maxDia: 44, slots, clef: 'treble' });
+    hit.rows.push({ topY: bsTop, topDia: 26, half: 5, yMin: midY, yMax: y0 + rowH - 10, minDia: 12, maxDia: 34, slots, clef: 'bass' });
   });
+  return hit;
 }
 
+/* Step 1: notate the bass. Step 2 (optional): fill in tenor, alto and soprano. */
+const VOICES = { 3: 'voiceS', 2: 'voiceA', 1: 'voiceT' };
+const VOICE_RANGE = { 3: [30, 44], 2: [25, 40], 1: [17, 33] };   // diatonic limits for S, A, T
+
 const ExHar = {
-  id: 'har', no: '5', titleKey: 'harTitle', descKey: 'harDesc',
-  S: Object.assign({ n: 6, mode: 'both', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 2.4, F: true, St: true, G: true }, store.get('har.s', {})),
-  task: null, ans: null, cursor: 1, checked: false, res: null, hit: null,
+  id: 'har', no: '5', titleKey: 'harTitle',
+  get descKey() { return this.stage === 2 ? 'harDesc2' : 'harDesc'; },
+  S: Object.assign({ bars: 4, mode: 'both', maxAcc: 3, inv: true, sev: true, dd: false, dur: 1.8, boost: 2.4, F: true, St: true, G: true }, store.get('har.s', {})),
+  task: null, ans: null, hit: null,
+  stage: 1,            // 1 = bass, 2 = upper voices
+  c1: 1, done1: false, res1: null,   // step 1 state
+  up: null, vcur: { i: 1, v: 3 }, done2: false, res2: null,   // step 2 state
 
   save() { store.set('har.s', this.S); },
+  get checked() { return this.stage === 1 ? this.done1 : this.done2; },
 
   build() {
     const P = this.P = panelShell(this);
     const S = this.S;
     const db = v => '+' + Math.round(20 * Math.log10(v)) + ' dB';
     P.settingsBody.append(
-      segControl('har-n', 'harN', [[4, '4'], [6, '6'], [8, '8']], S.n, v => { S.n = v; this.save(); this.newTask(); }),
       segControl('har-mode', 'modeLbl', [['maj', t('major')], ['min', t('minor')], ['both', t('both')]], S.mode, v => { S.mode = v; this.save(); }),
       segControl('har-acc', 'maxAcc', [0, 1, 2, 3, 4].map(n => [n, String(n)]), S.maxAcc, v => { S.maxAcc = v; this.save(); }),
       toggleGroup('harChords',
         toggleControl('har-inv', 'harInv', S.inv, v => { S.inv = v; this.save(); }),
         toggleControl('har-sev', 'harSev', S.sev, v => { S.sev = v; this.save(); }),
         toggleControl('har-dd', 'harDD', S.dd, v => { S.dd = v; this.save(); })),
-      sliderControl('har-dur', 'harDur', 0.8, 3.2, 0.1, S.dur, v => v.toFixed(1) + ' s', v => { S.dur = v; this.save(); }),
       sliderControl('har-boost', 'harBoost', 1, 4, 0.1, S.boost, db, v => { S.boost = v; this.save(); }),
       toggleGroup('harShow',
         toggleControl('har-sf', 'rowFunc', S.F, v => { S.F = v; this.save(); this.renderSolution(); }),
@@ -396,6 +445,7 @@ const ExHar = {
     );
     this.playBtn = playButton('listen', () => this.events(false), { primary: true });
     this.bassBtn = playButton('playBassOnly', () => this.events(true));
+    this.upperBtn = btn('upperStart', ICON.next, () => this.startUpper(), 'btn-sec btn-sm');
     mainControls(this, P, this.playBtn);
     bindStaffInput(P.score, this);
     watchWidth(P.score, () => this.render());
@@ -404,17 +454,31 @@ const ExHar = {
   },
 
   newTask() {
-    const task = Harmony.generate(this.S);
+    const task = Harmony.generate({ ...this.S, n: this.S.bars * 2 });   // two chords (half notes) per bar
     if (!task) return;
     this.task = task;
     this.ans = task.notes.map((ch, i) => i === 0 ? { ...ch[0] } : null);
-    this.cursor = 1;
-    this.checked = false; this.res = null;
+    this.stage = 1; this.c1 = 1; this.done1 = false; this.res1 = null;
+    this.up = null; this.done2 = false; this.res2 = null;
     if (this.P) {
       setFeedback(this.P.feedback, '', '');
       this.P.solWrap.hidden = true;
+      if (App.active === this) App.renderBar();
       this.render();
     }
+  },
+
+  /* step 2: the bass and the whole first chord are given */
+  startUpper() {
+    this.stage = 2;
+    this.up = this.task.notes.map((ch, i) => i === 0 ? ch.map(n => ({ ...n })) : [{ ...ch[0] }, null, null, null]);
+    this.vcur = { i: 1, v: 3 };
+    this.done2 = false; this.res2 = null;
+    setFeedback(this.P.feedback, '', '');
+    this.P.solWrap.hidden = true;
+    if (App.active === this) App.renderBar();
+    this.render();
+    this.P.score.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   },
 
   events(bassOnly) {
@@ -423,48 +487,108 @@ const ExHar = {
       const last = i === this.task.notes.length - 1;
       ch.forEach((n, k) => {
         if (bassOnly && k > 0) return;
-        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.8 : d * 1.01, vel: k === 0 ? 0.8 : last ? 0.5 : 0.56, gain: k === 0 && !bassOnly ? this.S.boost : 1 });
+        // the bass is louder only in step 1 (finding the bass); in step 2 all voices are balanced
+        const boost = k === 0 && !bassOnly && this.stage === 1 ? this.S.boost : 1;
+        ev.push({ t: i * d, midi: Note.midi(n), dur: last ? d * 1.8 : d * 1.01, vel: k === 0 ? 0.8 : last ? 0.5 : 0.6, gain: boost });
       });
     });
     return ev;
   },
 
-  hasInput() { return this.ans.slice(1).some(Boolean); },
+  /* ---------- sequence-editor interface (both steps) ---------- */
+  positions() {
+    const P = [];
+    for (let i = 1; i < this.up.length; i++) [3, 2, 1].forEach(v => P.push({ i, v }));
+    return P;
+  },
+  get cursor() {
+    if (this.stage === 1) return this.c1;
+    return this.positions().findIndex(p => p.i === this.vcur.i && p.v === this.vcur.v);
+  },
+  set cursor(x) { if (this.stage === 1) this.c1 = x; else this.vcur = this.positions()[x]; },
+  hasInput() {
+    return this.stage === 1 ? this.ans.slice(1).some(Boolean) : this.up.slice(1).some(ch => ch[1] || ch[2] || ch[3]);
+  },
   isLocked() { return this.checked; },
-  moveCursor(d) { this.cursor = clamp(this.cursor + d, 1, this.ans.length - 1); this.render(); },
-  getNote(i) { return this.ans[i]; },
-  editable(i) { return i > 0 && !this.checked; },
-  refNote(i) { for (let j = i - 1; j >= 0; j--) if (this.ans[j]) return this.ans[j]; return this.ans[0]; },
+  moveCursor(d) {
+    const max = this.stage === 1 ? this.ans.length - 1 : this.positions().length - 1;
+    this.cursor = clamp(this.cursor + d, this.stage === 1 ? 1 : 0, max);
+    this.render();
+  },
+  getNote(i) {
+    if (this.stage === 1) return this.ans[i];
+    const p = this.positions()[i];
+    return p ? this.up[p.i][p.v] : null;
+  },
+  editable(i) { return !this.checked && (this.stage === 2 || i > 0); },
+  refNote(i) {
+    if (this.stage === 1) { for (let j = i - 1; j >= 0; j--) if (this.ans[j]) return this.ans[j]; return this.ans[0]; }
+    const p = this.positions()[i];
+    for (let j = p.i - 1; j >= 0; j--) if (this.up[j][p.v]) return this.up[j][p.v];
+    return this.task.notes[0][p.v];
+  },
   defaultAlt(i, d) {
-    const m = Math.floor(i / 2), prev = [];
-    for (let j = m * 2; j < i; j++) prev.push(this.ans[j]);
+    if (this.stage === 1) {
+      const m = Math.floor(i / 2), prev = [];
+      for (let j = m * 2; j < i; j++) prev.push(this.ans[j]);
+      return readAlt(prev, d, this.task.key.sig);
+    }
+    const p = this.positions()[i], prev = [];
+    for (let j = Math.floor(p.i / 2) * 2; j < p.i; j++) prev.push(this.up[j][p.v]);
     return readAlt(prev, d, this.task.key.sig);
   },
-  diaRange() { return [12, 32]; },
+  diaRange() { return this.stage === 1 ? [12, 32] : VOICE_RANGE[this.vcur.v]; },
   setNote(i, n) {
-    this.ans[i] = n;
+    if (this.stage === 1) this.ans[i] = n;
+    else { const p = this.positions()[i]; this.up[p.i][p.v] = n; }
     if (App.hearInput) Sound.note(Note.midi(n));
     this.render();
   },
-  clearSlot(i) { if (i > 0) { this.ans[i] = null; this.render(); } },
+  clearSlot(i) {
+    if (this.stage === 1) { if (i > 0) this.ans[i] = null; }
+    else { const p = this.positions()[i]; this.up[p.i][p.v] = null; }
+    this.render();
+  },
   cmd(c, arg) {
     const before = this.cursor;
     SeqEdit.cmd(this, c, arg);
-    if (c === 'letter' && this.cursor === before && before < this.ans.length - 1 && !this.checked) { this.cursor++; this.render(); }
+    const last = this.stage === 1 ? this.ans.length - 1 : this.positions().length - 1;
+    if (c === 'letter' && this.cursor === before && before < last && !this.checked) { this.cursor = before + 1; this.render(); }
+  },
+  /* in step 2 a tap chooses the voice by where you tap: bass staff → tenor, treble: high → soprano, lower → alto */
+  pickVoice(i, row, dia) {
+    if (row.clef === 'bass') return 1;
+    const S = this.up[i][3], A = this.up[i][2];
+    if (S && dia === S.d) return 3;
+    if (A && dia === A.d) return 2;
+    if (S && A) return Math.abs(dia - S.d) <= Math.abs(dia - A.d) ? 3 : 2;
+    if (S) return dia > S.d ? 3 : 2;
+    if (A) return dia < A.d ? 2 : 3;
+    return dia >= 33 ? 3 : 2;
   },
   staffDown(r) {
     if (this.checked) return;
     const i = +r.slot.id.slice(1);
     if (i === 0) return;
-    this.cursor = i;
-    this.setNote(i, { d: r.dia, a: this.defaultAlt(i, r.dia) });
+    if (this.stage === 1) { this.c1 = i; this.setNote(i, { d: r.dia, a: this.defaultAlt(i, r.dia) }); return; }
+    const v = this.pickVoice(i, r.row, r.dia);
+    this.vcur = { i, v };
+    const [lo, hi] = VOICE_RANGE[v], d = clamp(r.dia, lo, hi);
+    this.setNote(this.cursor, { d, a: this.defaultAlt(this.cursor, d) });
   },
-  staffDrag(id, r) { this.staffDown(r); },
+  staffDrag(id, r) {
+    if (this.checked) return;
+    if (this.stage === 1) { this.staffDown(r); return; }
+    const [lo, hi] = VOICE_RANGE[this.vcur.v], d = clamp(r.dia, lo, hi);
+    this.setNote(this.cursor, { d, a: this.defaultAlt(this.cursor, d) });
+  },
   canPreview(slot) { return !this.checked && slot.id !== 'c0'; },
 
+  /* ---------- checking ---------- */
   check() {
     if (this.checked) return;
     if (!this.hasInput()) { this.reveal(); return; }
+    if (this.stage === 2) { this.checkUpper(); return; }
     let ok = 0, oct = 0;
     const marks = this.task.notes.map((ch, i) => {
       if (i === 0) return 'given';
@@ -473,31 +597,60 @@ const ExHar = {
       return 'bad';
     });
     const n = this.ans.length - 1, pct = Math.round(100 * ok / n);
-    this.res = { marks };
-    this.checked = true;
+    this.res1 = { marks };
+    this.done1 = true;
     statAdd('har', pct);
     const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
     let msg = t('harRes', { ok, n });
     if (oct) msg += ' ' + t('harOct', { n: oct });
-    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)}</span>`, this.bassBtn);
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(msg)} ${esc(t('upperOffer'))}</span>`, this.bassBtn, this.upperBtn);
+    this.P.solWrap.hidden = false;
+    this.render(); this.renderSolution();
+  },
+  checkUpper() {
+    let ok = 0, n = 0;
+    const marks = this.up.map((ch, i) => ch.map((u, v) => {
+      if (i === 0 || v === 0) return 'given';
+      n++;
+      if (u && Note.sameMidi(u, this.task.notes[i][v])) { ok++; return 'ok'; }
+      return 'bad';
+    }));
+    const pct = Math.round(100 * ok / n);
+    this.res2 = { marks };
+    this.done2 = true;
+    statAdd('har', pct);
+    const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
+    setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span><b>${pct} %</b> · ${esc(t('upperRes', { ok, n }))}</span>`);
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
   reveal() {
     if (this.checked) return;
-    this.checked = true;
-    setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`, this.bassBtn);
+    if (this.stage === 1) {
+      this.done1 = true;
+      setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))} ${esc(t('upperOffer'))}</span>`, this.bassBtn, this.upperBtn);
+    } else {
+      this.done2 = true;
+      setFeedback(this.P.feedback, 'info', fbIcon('info') + `<span>${esc(t('solShown'))}</span>`);
+    }
     this.P.solWrap.hidden = false;
     this.render(); this.renderSolution();
   },
 
+  /* ---------- drawing ---------- */
   render() {
     if (!this.P || !this.task) return;
-    const P = this.P, C = notaColors(), task = this.task;
+    const P = this.P, C = notaColors(), task = this.task, S = this.S;
     P.info.replaceChildren(
       soundChip(keyName(task.key), () => cadenceEvents(task.key)),
-      soundChip(t('harFirstBass', { n: noteName(task.notes[0][0]) }), () => [{ t: 0, midi: Note.midi(task.notes[0][0]), dur: 1.6 }]));
-    const marks = this.res ? this.res.marks : null;
+      this.stage === 1
+        ? soundChip(t('harFirstBass', { n: noteName(task.notes[0][0]) }), () => [{ t: 0, midi: Note.midi(task.notes[0][0]), dur: 1.6 }])
+        : chip(t('upperStep'), 'chip-strong'),
+    );
+    P.opts.replaceChildren(lengthControl('lenBars', [4, 8, 12], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
+      tempoControl('perChord', S.dur, 0.8, 3.2, 0.2, v => v.toFixed(1) + ' s', v => { S.dur = v; this.save(); }));
+    if (this.stage === 2) { this.renderUpper(); return; }
+    const marks = this.res1 ? this.res1.marks : null;
     const measures = [];
     for (let m = 0; m < Math.ceil(this.ans.length / 2); m++) {
       const events = [];
@@ -511,19 +664,40 @@ const ExHar = {
     }
     this.hit = renderLines(P.score, {
       clef: 'bass', key: task.key, time: null, beats: 4, beatValue: 4, measures,
-      minMW: 112, maxMPL: 4, sel: this.checked ? null : 'c' + this.cursor, range: this.diaRange()
+      minMW: 112, maxMPL: 4, sel: this.checked ? null : 'c' + this.c1, range: this.diaRange()
     });
     if (this.checked) dockHide(P);
     else {
-      const lbl = t('dockChordN', { i: this.cursor + 1, n: this.ans.length });
-      if (this.ans[this.cursor]) dockNote(P, this, lbl, this.ans[this.cursor]);
-      else dockHint(P, lbl, t('dockTapBass'));
+      const lbl = t('dockChordN', { i: this.c1 + 1, n: this.ans.length });
+      dockNote(P, this, lbl, this.ans[this.c1]);
     }
+    syncControls(this);
+  },
+  renderUpper() {
+    const P = this.P, C = notaColors();
+    const marks = this.res2 ? this.res2.marks : null;
+    this.hit = renderChorale(P.score, this.task, {}, {
+      notes: this.up,
+      sel: this.checked ? null : this.vcur.i,
+      color: (i, v) => i === 0 || v === 0 ? 'currentColor' : marks ? (marks[i][v] === 'ok' ? C.ok : C.bad) : C.user
+    });
+    if (this.checked) { dockHide(P); syncControls(this); return; }
+    const { i, v } = this.vcur;
+    const voiceSeg = el('div', { class: 'seg seg-sm', role: 'radiogroup', 'aria-label': t('voiceLbl') },
+      [3, 2, 1].map(vv => el('button', { type: 'button', class: 'seg-b', role: 'radio', 'aria-checked': String(vv === v),
+        onclick: () => { this.vcur = { i, v: vv }; this.render(); } }, t(VOICES[vv]))));
+    const n = this.up[i][v];
+    P.dock.hidden = false;
+    P.dock.replaceChildren(
+      el('span', { class: 'dock-lbl' }, t('dockChordN', { i: i + 1, n: this.up.length })),
+      voiceSeg,
+      el('span', { class: 'dock-name' }, n ? noteName(n) : '–'),
+      noteTools(this));
     syncControls(this);
   },
   renderSolution() {
     if (!this.P || !this.checked || this.P.solWrap.hidden) return;
-    renderChorale(this.P.solHost, this.task, { F: this.S.F, S: this.S.St, G: this.S.G }, { bass: 'currentColor' });
+    renderChorale(this.P.solHost, this.task, { F: this.S.F, S: this.S.St, G: this.S.G });
   },
   onKey(e) {
     if (e.key === ' ') { this.playBtn.trigger(); return true; }
