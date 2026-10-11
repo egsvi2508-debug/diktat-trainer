@@ -94,8 +94,8 @@ const App = {
       reset.dataset.armed = '1'; reset.textContent = t('resetConfirm');
       setTimeout(() => { if (reset.dataset.armed) { delete reset.dataset.armed; reset.textContent = t('resetStats'); } }, 4000);
     });
-    const keys = el('dl', { class: 'keys' });
-    t('keysList').split('|').forEach(line => { const [k, v] = line.split('='); keys.append(el('dt', {}, k), el('dd', {}, v)); });
+    const keys = el('ul', { class: 'keys' });
+    t('keysList').split('|').forEach(line => { const [k, v] = line.split('='); keys.append(el('li', {}, el('kbd', {}, k), el('span', {}, v))); });
     this.menu.body.append(
       this.exSection,
       el('h4', { class: 'set-h' }, t('general')),

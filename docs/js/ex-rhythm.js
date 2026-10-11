@@ -128,7 +128,7 @@ const ExLex = {
     const nota = el('div', { class: 'rc-nota' });
     renderRhythmMini(nota, p.durs, 120, 1);
     const on = this.sel.has(p.id) || p.id === '6';
-    const play = el('button', { type: 'button', class: 'tb tb-small', title: t('lexPlay'), 'aria-label': t('lexPlay') + ': ' + patternName(p), html: ICON.play });
+    const play = el('button', { type: 'button', class: 'icon-btn icon-btn-sm', title: t('lexPlay'), 'aria-label': t('lexPlay') + ': ' + patternName(p), html: ICON.play });
     play.addEventListener('click', ev => { ev.stopPropagation(); Sound.play(rhythmEvents(p.durs, ExMel.S.tempo)); });
     const card = el('div', { class: 'rcard t' + p.tier + (on ? ' on' : ''), 'data-id': p.id, role: 'button', tabindex: '0', 'aria-pressed': String(on), title: p.id === '6' ? t('lexAlways') : t('lexUse') },
       el('span', { class: 'rc-check', html: ICON.check, 'aria-hidden': 'true' }),

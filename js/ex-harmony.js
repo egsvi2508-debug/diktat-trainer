@@ -350,6 +350,11 @@ function renderChorale(host, task, show, colors) {
       if (mi === 0) {
         let yy = ly;
         const lx = x + 2;
+        const bands = [];
+        if (show.G) bands.push([ly - 11, 39]);
+        if (show.S) bands.push([ly - 11 + (show.G ? 39 : 0), 24]);
+        if (show.F) bands.push([ly - 11 + (show.G ? 39 : 0) + (show.S ? 24 : 0), 24]);
+        bands.forEach(([by, bh], j) => { if (j % 2 === 0) behind(svg, svgEl('rect', { x: 4, y: by, width: avail + 8, height: bh, rx: 6, class: 'band' })); });
         if (show.G) { svg.appendChild(svgEl('text', { x: lx, y: yy, class: 'row-lbl' }, 'GB')); yy += 39; }
         if (show.S) { svg.appendChild(svgEl('text', { x: lx, y: yy, class: 'row-lbl' }, t('rowStufeShort'))); yy += 24; }
         if (show.F) svg.appendChild(svgEl('text', { x: lx, y: yy, class: 'row-lbl' }, t('rowFuncShort')));

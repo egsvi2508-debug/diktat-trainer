@@ -304,15 +304,15 @@ function pitchKey(e, ex) {
 /* the small tools shown in the dock for the selected note: ▲ ▼ · ♭ ♮ ♯ · ✕
    ♭ and ♯ step the accidental, so pressing ♯ twice gives a double sharp */
 function noteTools(ex, opts = {}) {
-  const b = (html, titleKey, fn, cls = '') => el('button', { class: 'tb ' + cls, type: 'button', title: t(titleKey), 'aria-label': t(titleKey), html, onclick: fn });
-  const acc = (sym, titleKey, fn) => b(`<span class="acc">${sym}</span>`, titleKey, fn, 'tb-acc');
+  const b = (html, titleKey, fn, cls = '') => el('button', { class: 'icon-btn ' + cls, type: 'button', title: t(titleKey), 'aria-label': t(titleKey), html, onclick: fn });
+  const acc = (sym, titleKey, fn) => b(`<span class="acc">${sym}</span>`, titleKey, fn);
   return el('div', { class: 'tools', role: 'toolbar', 'aria-label': t('tbLabel') },
     b(ICON.up, 'tbUp', () => ex.cmd('up')),
     b(ICON.down, 'tbDown', () => ex.cmd('down')),
     acc('♭', 'tbFlat', () => ex.cmd('accDown')),
     acc('♮', 'tbNat', () => ex.cmd('acc', 0)),
     acc('♯', 'tbSharp', () => ex.cmd('accUp')),
-    b(ICON.del, opts.clearKey || 'tbClear', () => ex.cmd('clear'), 'tb-del'));
+    b(ICON.del, opts.clearKey || 'tbClear', () => ex.cmd('clear'), 'icon-del'));
 }
 
 /* Keep a score in sync with its container width */
