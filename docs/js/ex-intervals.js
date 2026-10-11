@@ -5,7 +5,7 @@
 const ExInt = {
   id: 'int', no: '1', titleKey: 'intTitle', descKey: 'intDesc',
   S: Object.assign({ dir: 'alt', simple: true, compound: true, playMode: 'mix' }, store.get('int.s', {})),
-  count: rnd(2), lastSemis: 0, task: null, ans: null, checked: false, result: null, cursor: 0, hit: null,
+  count: rnd(2), lastIv: '', task: null, ans: null, checked: false, result: null, cursor: 0, hit: null,
 
   save() { store.set('int.s', this.S); },
 
@@ -30,17 +30,21 @@ const ExInt = {
     this.count++;
     const S = this.S;
     const up = S.dir === 'up' ? true : S.dir === 'down' ? false : this.count % 2 === 1;
-    const pool = [];
-    if (S.simple) for (let s = 1; s <= 12; s++) pool.push(s);
-    if (S.compound) for (let s = 13; s <= 24; s++) pool.push(s);
-    const NUM = { 1: 2, 2: 2, 3: 3, 4: 3, 5: 4, 6: 0, 7: 5, 8: 6, 9: 6, 10: 7, 11: 7, 12: 8 };
+    // 1. the interval: 7 in 10 beyond the octave (when both ranges are on); inside a range every interval
+    //    NUMBER (2nd … octave, 9th … double octave) is equally likely; then minor/major 50/50,
+    //    4ths/5ths perfect or (1 in 5) the tritone. Never the same interval twice in a row.
+    const SIZES = { 2: [1, 2], 3: [3, 4], 4: [5, 5, 5, 5, 6], 5: [7, 7, 7, 7, 6], 6: [8, 9], 7: [10, 11], 8: [12] };
     const LO = 40, HI = 84; // E2 .. C6
-    for (let tries = 0; tries < 400; tries++) {
-      const semis = pick(pool);
-      if (semis === this.lastSemis && pool.length > 1) continue;
-      const base = semis > 12 ? semis - 12 : semis;
-      let num = NUM[base] || (chance(0.5) ? 4 : 5);
-      if (semis > 12) num += 7;
+    const range = S.simple && S.compound ? (Math.random() < 0.7 ? 'c' : 's') : S.compound ? 'c' : 's';
+    let num, semis;
+    do {
+      const base = 2 + rnd(7);                       // 2..8, equally likely
+      semis = pick(SIZES[base]);
+      num = base;
+      if (range === 'c') { num = base + 7; semis += 12; }
+    } while (num + ':' + semis === this.lastIv);
+    // 2. a starting note that fits that interval – only the note is redrawn, never the interval
+    for (let tries = 0; tries < 2000; tries++) {
       const step = rnd(7);
       const a = wpick([[0, 6], [1, 2], [-1, 2]]);
       if ((a === 1 && (step === 2 || step === 6)) || (a === -1 && (step === 3 || step === 0))) continue;
@@ -55,7 +59,7 @@ const ExInt = {
       const target = Note.spell(tm, given.d + (up ? num - 1 : -(num - 1)));
       if (Math.abs(target.a) > 1) continue;
       this.task = { given, target, up, iv: intervalInfo(given, target), harm: this.pickHarm() };
-      this.lastSemis = semis;
+      this.lastIv = num + ':' + semis;
       break;
     }
     this.ans = null; this.checked = false; this.result = null;
