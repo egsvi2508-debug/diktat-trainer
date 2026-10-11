@@ -143,7 +143,7 @@ def build_site():
             f'<link rel="stylesheet" href="fonts/fonts.css">\n{BASE_CSS}\n{style}\n</head>\n<body>\n{body}\n{scripts}\n{sw_reg}\n</body>\n</html>\n')
     (OUT / 'index.html').write_text(html, 'utf-8')
     manifest = {
-        'name': NAME, 'short_name': SHORT, 'description': DESC, 'lang': 'de',
+        'id': './', 'name': NAME, 'short_name': SHORT, 'description': DESC, 'lang': 'de',
         'start_url': './', 'scope': './', 'display': 'standalone', 'orientation': 'any',
         'background_color': '#eceef2', 'theme_color': '#161a25',
         'icons': [

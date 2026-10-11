@@ -2,6 +2,11 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    installTitle: 'Als App installieren', installBtn: 'Installieren',
+    installAndroid: 'Dann öffnet sich Satzlehre Übungen wie eine App vom Startbildschirm – auch offline.',
+    installIOS: 'Tippe unten auf <b>Teilen</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> und dann auf <b>„Zum Home-Bildschirm“</b>.',
+    installIOSOther: 'Öffne den Link in <b>Safari</b>, tippe auf <b>Teilen</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> und dann auf <b>„Zum Home-Bildschirm“</b>.',
+    installOther: 'Im Browser-Menü <b>⋮</b> auf <b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b> tippen.',
     dragSens: 'Ziehen auf dem Notensystem', sensFine: 'fein', sensMid: 'mittel', sensFast: 'schnell',
     tempoLbl: 'Tempo', perChord: 'Pro Akkord', slower: 'langsamer', faster: 'schneller',
     harDesc2: 'Schritt 2: Tipp einen Tonnamen oder ins System – Tenor, Alt und Sopran für jeden Akkord.',
@@ -112,6 +117,11 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    installTitle: 'Install as an app', installBtn: 'Install',
+    installAndroid: 'Satzlehre Übungen then opens like an app from your home screen – offline too.',
+    installIOS: 'Tap <b>Share</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> below, then <b>“Add to Home Screen”</b>.',
+    installIOSOther: 'Open the link in <b>Safari</b>, tap <b>Share</b> <svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-label="Teilen"><path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>, then <b>“Add to Home Screen”</b>.',
+    installOther: 'In the browser menu <b>⋮</b> tap <b>“Install app”</b> or <b>“Add to Home screen”</b>.',
     dragSens: 'Dragging on the staff', sensFine: 'fine', sensMid: 'medium', sensFast: 'fast',
     tempoLbl: 'Tempo', perChord: 'Per chord', slower: 'slower', faster: 'faster',
     harDesc2: 'Step 2: tap a note name or the staff – tenor, alto and soprano for each chord.',

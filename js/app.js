@@ -37,6 +37,9 @@ const App = {
       $('#panels').append(it.ex.root);
     });
     this.buildChrome();
+    // Android / Chrome / Edge: keep the browser's install prompt for our own button
+    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); this.installPrompt = e; if (!this.active) this.renderHome(); });
+    window.addEventListener('appinstalled', () => { this.installPrompt = null; store.set('installHide', true); if (!this.active) this.renderHome(); });
     const h = (location.hash || '').slice(1);
     this.show(h === 'start' || this.list.some(it => it.hash === h) ? h : 'start');
     window.addEventListener('hashchange', () => {
@@ -67,6 +70,34 @@ const App = {
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(rerender);
   },
 
+  /* ---------- "install as app" card ---------- */
+  installPrompt: null,
+  installCard() {
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (standalone || location.protocol !== 'https:' && location.hostname !== 'localhost' || store.get('installHide', false)) return '';
+    const ua = navigator.userAgent;
+    const iOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const inApp = /Instagram|FBAN|FBAV|WhatsApp|Line\/|Snapchat|TikTok/i.test(ua);
+    const iosSafari = iOS && !/CriOS|FxiOS|EdgiOS/.test(ua) && !inApp;
+    let body, action = null;
+    if (this.installPrompt) {
+      body = t('installAndroid');
+      action = btn('installBtn', ICON.down, async () => {
+        const pr = this.installPrompt; this.installPrompt = null;
+        pr.prompt();
+        try { await pr.userChoice; } catch (e) { /* dismissed */ }
+        this.renderHome();
+      }, 'btn-play btn-sm');
+    } else if (iosSafari) body = t('installIOS');
+    else if (iOS) body = t('installIOSOther');
+    else body = t('installOther');
+    const close = iconBtn(ICON.cross, 'close', () => { store.set('installHide', true); this.renderHome(); }, 'icon-btn-sm install-x');
+    return el('div', { class: 'card install' },
+      el('img', { class: 'install-ico', src: 'icons/icon-192.png', alt: '', width: 48, height: 48 }),
+      el('div', { class: 'install-txt' }, el('h3', {}, t('installTitle')), el('p', { html: body })),
+      action, close);
+  },
+
   /* ---------- start screen ---------- */
   renderHome() {
     const go = hash => () => this.show(hash);
@@ -80,6 +111,7 @@ const App = {
         el('span', { class: 'circle', html: ICON.right }));
     }));
     this.home.replaceChildren(
+      this.installCard(),
       el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
       el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards);
   },
