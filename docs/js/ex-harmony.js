@@ -537,7 +537,7 @@ const ExHar = {
     for (let j = Math.floor(p.i / 2) * 2; j < p.i; j++) prev.push(this.up[j][p.v]);
     return readAlt(prev, d, this.task.key.sig);
   },
-  diaRange() { return this.stage === 1 ? [12, 32] : VOICE_RANGE[this.vcur.v]; },
+  diaRange() { return this.stage === 1 ? [12, 34] : VOICE_RANGE[this.vcur.v]; },
   setNote(i, n) {
     if (this.stage === 1) this.ans[i] = n;
     else { const p = this.positions()[i]; this.up[p.i][p.v] = n; }

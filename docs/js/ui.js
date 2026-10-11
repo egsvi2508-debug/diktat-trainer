@@ -88,7 +88,7 @@ function panelShell(ex) {
     hint: el('p', { class: 'hint-line' }, t(ex.descKey)),
     info: el('div', { class: 'info' }),
     opts: el('div', { class: 'opts' }),
-    score: el('div', { class: 'score', tabindex: '0', 'aria-label': t('scoreLabel') }),
+    score: el('div', { class: 'score', 'aria-label': t('scoreLabel') }),
     dock: el('div', { class: 'dock' }),
     controls: el('div', { class: 'controls' }),
     feedback: el('div', { class: 'feedback', role: 'status', hidden: true }),

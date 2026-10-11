@@ -70,7 +70,7 @@ function makeFlight(kind) {
         notes.push(n);
       }
       this.task = { notes, key };
-      this.ans = notes.map((n, i) => i === 0 ? { ...n } : null);
+      this.ans = notes.map((n, i) => this.isGiven(i) ? { ...n } : null);
       this.cursor = 1;
       this.checked = false; this.res = null; this.playsLeft = 3;
       if (this.P) {
@@ -94,13 +94,21 @@ function makeFlight(kind) {
       return ev;
     },
 
-    hasInput() { return this.ans.slice(1).some(Boolean); },
+    // the first note of every two bars is given (notes 1, 9, 17, …)
+    isGiven(i) { return i % 8 === 0; },
+    hasInput() { return this.ans.some((n, i) => n && !this.isGiven(i)); },
 
     /* sequence-editor interface */
     isLocked() { return this.checked; },
-    moveCursor(d) { this.cursor = clamp(this.cursor + d, 1, this.ans.length - 1); this.render(); },
+    moveCursor(d) {
+      let i = this.cursor + d;
+      while (i > 0 && i < this.ans.length - 1 && this.isGiven(i)) i += Math.sign(d);
+      this.cursor = clamp(i, 1, this.ans.length - 1);
+      if (this.isGiven(this.cursor)) this.cursor = clamp(this.cursor - Math.sign(d), 1, this.ans.length - 1);
+      this.render();
+    },
     getNote(i) { return this.ans[i]; },
-    editable(i) { return i > 0 && !this.checked; },
+    editable(i) { return !this.isGiven(i) && !this.checked; },
     refNote(i) { for (let j = i - 1; j >= 0; j--) if (this.ans[j]) return this.ans[j]; return this.task.notes[0]; },
     defaultAlt(i, d) {
       const bar = Math.floor(i / 4), prev = [];
@@ -113,35 +121,35 @@ function makeFlight(kind) {
       if (App.hearInput) Sound.note(Note.midi(n));
       this.render();
     },
-    clearSlot(i) { if (i > 0) { this.ans[i] = null; this.render(); } },
+    clearSlot(i) { if (!this.isGiven(i)) { this.ans[i] = null; this.render(); } },
     cmd(c, arg) {
       const before = this.cursor;
       SeqEdit.cmd(this, c, arg);
       // after entering a pitch by letter name, move on to the next note
-      if (c === 'letter' && this.cursor === before && before < this.ans.length - 1 && !this.checked) { this.cursor++; this.render(); }
+      if (c === 'letter' && this.cursor === before && before < this.ans.length - 1 && !this.checked) this.moveCursor(1);
     },
     staffDown(r) {
       if (this.checked) return;
       const i = +r.slot.id.slice(1);
-      if (i === 0) return;
+      if (this.isGiven(i)) return;
       this.cursor = i;
       this.setNote(i, { d: r.dia, a: this.defaultAlt(i, r.dia) });
     },
     staffDrag(id, r) { this.staffDown(r); },
-    canPreview(slot) { return !this.checked && slot.id !== 'n0'; },
+    canPreview(slot) { return !this.checked && !slot.locked; },
 
     check() {
       if (this.checked) return;
-      const filled = this.ans.slice(1).filter(Boolean).length;
+      const filled = this.hasInput() ? 1 : 0;
       if (!filled) { this.reveal(); return; }
       let ok = 0, enh = 0;
       const marks = this.task.notes.map((sn, i) => {
-        if (i === 0) return 'given';
+        if (this.isGiven(i)) return 'given';
         const u = this.ans[i];
         if (u && Note.sameMidi(u, sn)) { ok++; if (!Note.eq(u, sn)) enh++; return 'ok'; }
         return 'bad';
       });
-      const n = this.task.notes.length - 1;
+      const n = this.task.notes.filter((_, i) => !this.isGiven(i)).length;
       const pct = Math.round(100 * ok / n);
       this.res = { marks };
       this.checked = true;
@@ -167,7 +175,7 @@ function makeFlight(kind) {
         const events = [];
         for (let k = 0; k < 4; k++) {
           const i = bar * 4 + k, n = notes[i];
-          events.push({ dur: 'q', note: n, slot: withSlots ? 'n' + i : null, ph: !n && withSlots ? 'note' : null, color: colorFn(i), locked: i === 0 });
+          events.push({ dur: 'q', note: n, slot: withSlots ? 'n' + i : null, ph: !n && withSlots ? 'note' : null, color: colorFn(i), locked: this.isGiven(i) });
         }
         out.push({ events });
       }
@@ -183,7 +191,7 @@ function makeFlight(kind) {
       P.opts.replaceChildren(lengthControl('lenBars', [2, 4, 8, 12], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
         tempoControl('tempoLbl', S.tempo, 30, 120, 2, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }));
       const marks = this.res ? this.res.marks : null;
-      const measures = this.measures(this.ans, i => i === 0 ? 'currentColor' : marks ? (marks[i] === 'ok' ? C.ok : C.bad) : C.user, true);
+      const measures = this.measures(this.ans, i => this.isGiven(i) ? 'currentColor' : marks ? (marks[i] === 'ok' ? C.ok : C.bad) : C.user, true);
       this.hit = renderLines(P.score, {
         clef: S.clef, key: this.task.key, time: '4/4', beats: 4, beatValue: 4, measures,
         minMW: 130, maxMPL: 4, sel: this.checked ? null : 'n' + this.cursor, range: this.diaRange()

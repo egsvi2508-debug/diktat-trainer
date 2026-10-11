@@ -2,6 +2,7 @@
 /* German / English interface text */
 const I18N = {
   de: {
+    dragSens: 'Ziehen auf dem Notensystem', sensFine: 'fein', sensMid: 'mittel', sensFast: 'schnell',
     tempoLbl: 'Tempo', perChord: 'Pro Akkord', slower: 'langsamer', faster: 'schneller',
     harDesc2: 'Schritt 2: Tipp einen Tonnamen oder ins System – Tenor, Alt und Sopran für jeden Akkord.',
     lenBars: 'Takte', lenChords: 'Akkorde', upperStart: 'Oberstimmen ergänzen',
@@ -91,8 +92,8 @@ const I18N = {
     melRes: 'Rhythmus: {r}/{nb} Gruppen · Töne: {p}/{pt} richtig',
 
     secTitle: 'Diktat im Flug: Sekunden', terTitle: 'Diktat im Flug: Terzen',
-    secDesc: 'Nur Sekunden. Schreib beim Hören auf Papier mit (3×), dann eintragen oder Lösung zeigen.',
-    terDesc: 'Nur Terzen. Schreib beim Hören auf Papier mit (3×), dann eintragen oder Lösung zeigen.',
+    secDesc: 'Nur Sekunden. Alle zwei Takte ist der erste Ton gegeben. Schreib mit (3×), dann eintragen oder Lösung zeigen.',
+    terDesc: 'Nur Terzen. Alle zwei Takte ist der erste Ton gegeben. Schreib mit (3×), dann eintragen oder Lösung zeigen.',
     flMode: 'Tonvorrat', flFree: 'frei (chromatisch)', flKey: 'in einer Tonart',
     clefLbl: 'Schlüssel', clefTreble: 'Violinschlüssel', clefBass: 'Bassschlüssel',
     flLimit: 'Nur 3× anhören (wie im Kurs)',
@@ -111,6 +112,7 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde'
   },
   en: {
+    dragSens: 'Dragging on the staff', sensFine: 'fine', sensMid: 'medium', sensFast: 'fast',
     tempoLbl: 'Tempo', perChord: 'Per chord', slower: 'slower', faster: 'faster',
     harDesc2: 'Step 2: tap a note name or the staff – tenor, alto and soprano for each chord.',
     lenBars: 'Bars', lenChords: 'Chords', upperStart: 'Add the upper voices',
@@ -200,8 +202,8 @@ const I18N = {
     melRes: 'Rhythm: {r}/{nb} groups · Pitches: {p}/{pt} correct',
 
     secTitle: 'Dictation on the fly: seconds', terTitle: 'Dictation on the fly: thirds',
-    secDesc: 'Only seconds. Write along on paper while listening (3×), then enter it or show the solution.',
-    terDesc: 'Only thirds. Write along on paper while listening (3×), then enter it or show the solution.',
+    secDesc: 'Only seconds. The first note of every two bars is given. Write along (3×), then enter it or show the solution.',
+    terDesc: 'Only thirds. The first note of every two bars is given. Write along (3×), then enter it or show the solution.',
     flMode: 'Pitch set', flFree: 'free (chromatic)', flKey: 'within a key',
     clefLbl: 'Clef', clefTreble: 'treble', clefBass: 'bass',
     flLimit: 'Listen only 3 times (as in class)',

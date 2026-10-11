@@ -131,6 +131,7 @@ const App = {
       el('h4', { class: 'set-h' }, t('general')),
       segControl('g-lang', 'langLbl', [['de', 'Deutsch'], ['en', 'English']], LANG, v => { this.menu.d.close(); this.setLang(v); }),
       vol,
+      segControl('g-sens', 'dragSens', [[1, t('sensFine')], [2, t('sensMid')], [3, t('sensFast')]], store.get('dragSens', 2), v => store.set('dragSens', v)),
       toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
       el('div', { class: 'field keys-field' }, el('span', { class: 'field-lbl' }, t('keysTitle')), keys),
       el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))

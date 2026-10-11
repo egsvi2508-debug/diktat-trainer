@@ -43,10 +43,14 @@ function notaColors() {
 function autoScale(w) { return w < 440 ? 0.9 : w < 520 ? 1 : w < 820 ? 1.1 : 1.2; }
 
 function vfSurface(host, hUnits, scale) {
-  host.innerHTML = '';
+  // keep the box's height while it is redrawn, otherwise the page gets shorter for a moment
+  // and the browser jumps the scroll position (e.g. back to the top when you press a note key)
   const wCss = Math.max(260, Math.floor(host.clientWidth));
+  host.style.minHeight = host.offsetHeight + 'px';
+  host.innerHTML = '';
   const r = new VF.Renderer(host, VF.Renderer.Backends.SVG);
   r.resize(wCss, Math.ceil(hUnits * scale));
+  host.style.minHeight = '';
   const ctx = r.getContext();
   ctx.scale(scale, scale);
   ctx.setFillStyle('currentColor');
@@ -129,11 +133,29 @@ function renderLines(host, spec) {
   if (spec.key) probe.addKeySignature(spec.key.vf);
   if (spec.time) probe.addTimeSignature(spec.time);
   const extra = probe.getNoteStartX() - new VF.Stave(0, 0, 300).getNoteStartX();
-  const minMW = spec.minMW * (Wfull < 440 ? 0.62 : 1);
-  let mpl = clamp(Math.floor((avail - extra) / minMW), 1, spec.maxMPL || 4);
-  mpl = Math.ceil(spec.measures.length / Math.ceil(spec.measures.length / mpl));   // even lines: 2+2, not 3+1
-  const lines = [];
-  for (let i = 0; i < spec.measures.length; i += mpl) lines.push(spec.measures.slice(i, i + mpl));
+  // measure what each bar really needs, then fill lines with as many bars as fit
+  const need = spec.measures.map(m => {
+    markAccidentals(m.events, sig);
+    const notes = m.events.map(ev => mkNote(ev, clef));
+    const v = new VF.Voice({ num_beats: spec.beats, beat_value: spec.beatValue }).setMode(VF.Voice.Mode.SOFT).addTickables(notes);
+    const f = new VF.Formatter().joinVoices([v]);
+    return Math.max(spec.minMW * 0.6, f.preCalculateMinTotalWidth([v]) * 1.1 + 22);
+  });
+  const fits = (from, to) => need.slice(from, to).reduce((a, b) => a + b, 0) + extra <= avail;
+  // greedy: as many bars per line as fit
+  const greedy = [];
+  for (let i = 0; i < need.length;) {
+    let j = i + 1;
+    while (j < need.length && j - i < (spec.maxMPL || 4) && fits(i, j + 1)) j++;
+    greedy.push([i, j]); i = j;
+  }
+  // prefer the same number of lines with bars spread evenly (2+2 rather than 3+1) – only if every line still fits
+  const per = Math.ceil(need.length / greedy.length);
+  const even = [];
+  for (let i = 0; i < need.length; i += per) even.push([i, Math.min(i + per, need.length)]);
+  const chunks = even.length === greedy.length && even.every(([a, b]) => fits(a, b)) ? even : greedy;
+  const lines = chunks.map(([a, b]) => spec.measures.slice(a, b)), lineIdx = chunks.map(([a]) => a);
+  const lineScale = lineIdx.map((i0, li) => (avail - extra) / need.slice(i0, i0 + lines[li].length).reduce((a, b) => a + b, 0));
   const rowH = spec.rowH || 130;
   const { ctx, svg } = vfSurface(host, lines.length * rowH + 14, scale);
   const hit = { rows: [] };
@@ -142,11 +164,12 @@ function renderLines(host, spec) {
 
   lines.forEach((ms, li) => {
     const y = 4 + li * rowH;
-    const mw = (avail - extra) / (lines.length === 1 ? ms.length : mpl);
+    // stretch each line to the full width (a short last line keeps the scale of the line before)
+    const k = li === lines.length - 1 && li > 0 && ms.length < lines[0].length ? Math.min(lineScale[li], lineScale[li - 1]) : lineScale[li];
     let x = 8;
     const row = { slots: [], topDia: TOP_DIA[clef], half: 5, minDia: range[0], maxDia: range[1], clef };
     ms.forEach((m, mi) => {
-      const w = mi === 0 ? mw + extra : mw;
+      const w = need[lineIdx[li] + mi] * k + (mi === 0 ? extra : 0);
       const st = new VF.Stave(x, y, w);
       if (mi === 0) {
         st.addClef(clef);
@@ -242,7 +265,14 @@ function drawPreview(svg, ex, r) {
    Touch: a swipe scrolls the page and changes nothing; a tap places/selects the note. The selected
    note's column (the highlighted band) is a drag handle: put the finger there and slide up or down –
    about 10 px per step – with a bubble above the finger showing the note name. */
-const DRAG_STEP_PX = 10, TAP_SLOP_PX = 10;
+const TAP_SLOP_PX = 10;
+/* finger distance → steps. Slow near the start (precise), faster further out, so any note is in reach.
+   Sensitivity 1 (fine) … 3 (fast) is set in the settings sheet. */
+function dragSteps(dy) {
+  const base = [16, 11, 7][clamp(store.get('dragSens', 2), 1, 3) - 1], near = 5 * base, a = Math.abs(dy);
+  const steps = a <= near ? a / base : 5 + (a - near) / (base / 2);
+  return Math.sign(dy) * Math.round(steps);
+}
 function bindStaffInput(host, ex) {
   let drag = null, press = null;
   host.classList.add('input-score');
@@ -302,8 +332,9 @@ function bindStaffInput(host, ex) {
     if (drag) {
       let r;
       if (drag.touch) {
-        const row = drag.r.row;
-        r = { ...drag.r, dia: clamp(drag.d0 - Math.round((e.clientY - drag.y0) / DRAG_STEP_PX), row.minDia, row.maxDia) };
+        // the whole range of the exercise is reachable, across both staves
+        const [lo, hi] = ex.diaRange();
+        r = { ...drag.r, dia: clamp(drag.d0 - dragSteps(e.clientY - drag.y0), lo, hi) };
       } else {
         if (!(e.buttons & 1)) { end(); return; }
         r = hitAt(e);
