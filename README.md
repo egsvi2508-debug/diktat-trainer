@@ -35,3 +35,6 @@ Off until `projectId` and `apiKey` are filled in at the top of `js/backend.js`.
 2. Firestore → Rules: paste `firestore.rules` → Publish.
 3. Project settings → add a Web app → copy `projectId` and `apiKey` into `js/backend.js`, run `python3 build_webapp.py`, push.
 4. Read results in the Firebase console: `days/<YYYY-MM-DD>` (devices, opens, ex_*) and `feedback`.
+
+## Licence
+© 2026 Emmanuel Sebaali. All rights reserved. See LICENSE. Viewing this code does not grant permission to copy or reuse it.
