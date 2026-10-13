@@ -20,10 +20,12 @@ UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 SAMPLE_URL = 'https://tonejs.github.io/audio/salamander/{}.mp3'   # Salamander Grand Piano, A. Holm, CC BY 3.0
 NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']
 SAMPLES = [NOTE_NAMES[m % 12] + str(m // 12 - 1) for m in range(33, 97, 3)]   # A1 … C7, same list as js/audio.js
-JS_FILES = ['i18n.js', 'core.js', 'backend.js', 'notation.js', 'audio.js', 'ui.js',
-            'ex-intervals.js', 'ex-rhythm.js', 'ex-flight.js', 'ex-harmony.js', 'app.js']
+JS_FILES = ['i18n.js', 'core.js', 'backend.js', 'notation.js', 'audio.js', 'ui.js', 'gen.js', 'mic.js',
+            'ex-intervals.js', 'ex-rhythm.js', 'ex-flight.js', 'ex-harmony.js',
+            'ex-sing.js', 'ex-modes.js', 'ex-two.js', 'ex-context.js', 'app.js']
 NAME, SHORT = 'Satzlehre Übungen', 'Satzlehre Übungen'
-DESC = 'Gehörbildung für den Satzlehre-Unterricht: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug und Harmoniefolgen.'
+DESC = ('Gehörbildung für den Satzlehre-Unterricht. Einheit 1: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug, '
+        'Harmoniefolgen. Einheit 2: Modi singen und schreiben, Blattsingen, zweistimmiges Diktat, Hören im Kontext.')
 
 
 def fetch(url, binary=False):

@@ -144,18 +144,19 @@ const Sound = (() => {
     else pianoSynth(out, t, midi, dur, vel, gain);
   }
   // wooden metronome "tock"
-  function click(out, t, accent) {
+  function click(out, t, accent, soft) {
+    const k = soft ? 0.45 : 1;   // softer while you sing along
     const ns = ctx.createBufferSource(); ns.buffer = noiseBuf;
     const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = accent ? 2500 : 1800; bp.Q.value = 7;
     const ng = ctx.createGain();
-    ng.gain.setValueAtTime(accent ? 1.5 : 0.95, t);
+    ng.gain.setValueAtTime((accent ? 1.5 : 0.95) * k, t);
     ng.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
     ns.connect(bp); bp.connect(ng); ng.connect(out); ns.start(t); ns.stop(t + 0.06);
     const o = ctx.createOscillator();
     o.frequency.setValueAtTime(accent ? 1180 : 880, t);
     o.frequency.exponentialRampToValueAtTime(accent ? 960 : 700, t + 0.04);
     const og = ctx.createGain();
-    og.gain.setValueAtTime(accent ? 0.2 : 0.12, t);
+    og.gain.setValueAtTime((accent ? 0.2 : 0.12) * k, t);
     og.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
     o.connect(og); og.connect(out); o.start(t); o.stop(t + 0.06);
   }
@@ -186,12 +187,13 @@ const Sound = (() => {
       const t0 = ctx.currentTime + 0.08;
       let total = 0.1;
       for (const e of humanize(events)) {
-        if (e.click) click(bus, t0 + e.t, e.accent);
+        if (e.click) click(bus, t0 + e.t, e.accent, e.soft);
         else piano(bus, t0 + e.t, e.midi, e.dur, e.vel, e.gain ?? 1);
         total = Math.max(total, e.t + (e.dur || 0.1));
       }
       pb.started = true;
-      if (opts.onStart) opts.onStart();
+      pb.t0 = t0;
+      if (opts.onStart) opts.onStart(t0);   // audio-clock time of event t = 0 (the singing check lines up with it)
       const tick = () => {
         if (pb.done) return;
         const el = ctx.currentTime - t0;
@@ -229,12 +231,27 @@ const Sound = (() => {
     ready();
     piano(mix, ctx.currentTime + 0.01, midi, dur, 0.65, 1);
   }
+  /* a short bell when an answer is right – a little brighter when it came quickly */
+  function chime(bright = 1) {
+    ready();
+    const t = ctx.currentTime + 0.02, base = 79 + rnd(5) + (bright >= 2 ? 3 : 0);
+    const steps = bright >= 2 ? [0, 4, 7, 12] : bright >= 1 ? [0, 7, 12] : [0, 7];
+    steps.forEach((st, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(), tt = t + i * 0.062;
+      o.type = 'triangle';
+      o.frequency.value = 440 * Math.pow(2, (base + st - 69) / 12);
+      g.gain.setValueAtTime(0, tt);
+      g.gain.linearRampToValueAtTime(0.15, tt + 0.004);
+      g.gain.exponentialRampToValueAtTime(0.0008, tt + 0.45);
+      o.connect(g); g.connect(mix); o.start(tt); o.stop(tt + 0.5);
+    });
+  }
   function setVolume(v) {
     volume = v; store.set('vol', v);
     if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
   }
   prefetch();
-  return { play, stop, note, ready, setVolume, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
+  return { play, stop, note, chime, ready, setVolume, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
 })();
 
 /* A play button with a progress bar; a second press stops playback */

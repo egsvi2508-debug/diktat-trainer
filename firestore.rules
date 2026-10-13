@@ -25,7 +25,9 @@ service cloud.firestore {
       allow update: if request.resource.data.diff(resource.data).affectedKeys().size() == 1
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(counters())
         && upOne('devices') && upOne('opens') && upOne('ex_int') && upOne('ex_lex')
-        && upOne('ex_mel') && upOne('ex_sec') && upOne('ex_ter') && upOne('ex_har');
+        && upOne('ex_mel') && upOne('ex_sec') && upOne('ex_ter') && upOne('ex_har')
+        && upOne('ex_msing') && upOne('ex_mdict') && upOne('ex_mpat') && upOne('ex_blatt')
+        && upOne('ex_two') && upOne('ex_cton') && upOne('ex_cint') && upOne('ex_ctri');
       allow read, delete: if false;
     }
 
@@ -35,7 +37,8 @@ service cloud.firestore {
         || request.resource.data.get(f, 0) == resource.data.get(f, 0) + 1;
     }
     function counters() {
-      return ['devices', 'opens', 'ex_int', 'ex_lex', 'ex_mel', 'ex_sec', 'ex_ter', 'ex_har'];
+      return ['devices', 'opens', 'ex_int', 'ex_lex', 'ex_mel', 'ex_sec', 'ex_ter', 'ex_har',
+        'ex_msing', 'ex_mdict', 'ex_mpat', 'ex_blatt', 'ex_two', 'ex_cton', 'ex_cint', 'ex_ctri'];
     }
   }
 }

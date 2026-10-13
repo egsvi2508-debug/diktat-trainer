@@ -35,12 +35,19 @@ const ICON = {
   chat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   menu: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
   sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9m4 0h3M4 17h3m4 0h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="15" cy="7" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="9" cy="17" r="2.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>',
-  ear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9a5 5 0 0 1 10 0c0 3-3 3.5-3 6.5a2.5 2.5 0 0 1-5 .5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1.2-1.4 1.6-1.4 2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  ear: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9a5 5 0 0 1 10 0c0 3-3 3.5-3 6.5a2.5 2.5 0 0 1-5 .5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 9.5a2 2 0 0 1 4 0c0 1.2-1.4 1.6-1.4 2.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11.5" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  pattern: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 20l2.6-3.2 2.6 1.6M8.7 14.6l2.6-3.2 2.6 1.6M14.9 9.2l2.6-3.2 2.6 1.6" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  sheet: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h8l4 4v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14.5 3.5v4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.2 16.4V10.2l3.6-1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9.7" cy="16.5" r="1.7" fill="currentColor"/></svg>',
+  duo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9c2.5-3.2 5 3.2 7.5 0s5-3.2 7.5 0c1 1.3 2 1.6 3 1.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 16c2.5 2.6 5-2.6 7.5 0s5 2.6 7.5 0c1-1 2-1.3 3-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  context: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="7.5" cy="18.2" rx="3" ry="2.2" transform="rotate(-20 7.5 18.2)" fill="currentColor"/><ellipse cx="7.5" cy="13.6" rx="3" ry="2.2" transform="rotate(-20 7.5 13.6)" fill="currentColor"/><ellipse cx="7.5" cy="9" rx="3" ry="2.2" transform="rotate(-20 7.5 9)" fill="currentColor"/><ellipse cx="17.4" cy="5.8" rx="3" ry="2.2" transform="rotate(-20 17.4 5.8)" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>',
+  unit1: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9.4 12.8 7.6v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  unit2: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.4 9.6a2.7 2.7 0 0 1 5.3.8c0 1.3-.9 2.1-2 3l-3.3 3.2h5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 
 function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#000'; }
 function notaColors() {
-  return { ink: 'currentColor', user: cssVar('--accent'), ok: cssVar('--ok'), bad: cssVar('--bad'), muted: cssVar('--muted') };
+  return { ink: 'currentColor', user: cssVar('--accent'), ok: cssVar('--ok'), bad: cssVar('--bad'), warn: cssVar('--warn'), muted: cssVar('--ink-3') };
 }
 function autoScale(w) { return w < 440 ? 0.9 : w < 520 ? 1 : w < 820 ? 1.1 : 1.2; }
 
@@ -143,7 +150,8 @@ function renderLines(host, spec) {
     const f = new VF.Formatter().joinVoices([v]);
     return Math.max(spec.minMW * 0.6, f.preCalculateMinTotalWidth([v]) * 1.1 + 22);
   });
-  const fits = (from, to) => need.slice(from, to).reduce((a, b) => a + b, 0) + extra <= avail;
+  // a line may be squeezed a little (6 %; the bars still keep more than VexFlow's minimum width)
+  const fits = (from, to) => need.slice(from, to).reduce((a, b) => a + b, 0) + extra <= avail * 1.06;
   // greedy: as many bars per line as fit
   const greedy = [];
   for (let i = 0; i < need.length;) {
@@ -220,6 +228,8 @@ function renderLines(host, spec) {
         } else if (ev.ph === 'note') {
           svg.appendChild(svgEl('circle', { cx: g.cx, cy: row.topY + 20, r: 6, class: 'ph-note' + (spec.sel === ev.slot ? ' on' : '') }));
         }
+        // a small mark under the note (singing check: ↑½ = a half step too high, +30 = 30 cents too high)
+        if (ev.mark) svg.appendChild(svgEl('text', { x: g.cx, y: row.topY + 84, class: 'nmark ' + (ev.markCls || '') }, ev.mark));
         if (ev.slot != null) {
           if (spec.sel === ev.slot) behind(svg, svgEl('rect', { x: g.x0 + 1, y: row.topY - 30, width: Math.max(6, g.x1 - g.x0 - 2), height: 100, rx: 8, class: 'sel' }));
           row.slots.push({ id: ev.slot, x0: g.x0, x1: g.x1, cx: g.cx, ghost: !ev.note && ev.ph === 'beat', locked: !!ev.locked });

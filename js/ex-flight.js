@@ -50,25 +50,10 @@ function makeFlight(kind) {
         if ((a === 1 && (st === 2 || st === 6)) || (a === -1 && (st === 0 || st === 3))) a = 0;
         first = { d, a };
       }
-      const notes = [first];
-      // fully random: every step is a coin flip – up or down, minor or major (only the range edges force a
-      // direction). A note that would need a double accidental is written enharmonically (E𝄪 → F♯).
-      for (let i = 1; i < L; i++) {
-        const prev = notes[i - 1], pm = Note.midi(prev);
-        const reach = this.kind === 2 ? 2 : 4;
-        let dir = chance(0.5) ? 1 : -1;
-        if (pm + reach > hi) dir = -1;
-        if (pm - reach < lo) dir = 1;
-        const d = prev.d + dir * step;
-        let n;
-        if (key) n = { d, a: key.sig[mod(d, 7)] };
-        else {
-          const m = pm + dir * (this.kind === 2 ? pick([1, 2]) : pick([3, 4]));
-          n = Note.spell(m, d);
-          if (Math.abs(n.a) > 1) n = [d - 1, d + 1].map(dd => Note.spell(m, dd)).sort((x, y) => Math.abs(x.a) - Math.abs(y.a))[0];
-        }
-        notes.push(n);
-      }
+      // random but varied (see stepMelody in gen.js): never A-B-A-B, no figure repeated straight away,
+      // minor and major steps in balance, no long runs in one direction, plain spellings (no E♯, F♭, ×, 𝄫)
+      const notes = stepMelody({ n: L, size: this.kind, lo, hi, key, start: first }) ||
+        Array.from({ length: L }, (_, i) => ({ d: first.d + (i % 2) * step, a: key ? key.sig[mod(first.d + (i % 2) * step, 7)] : 0 }));
       this.task = { notes, key };
       this.ans = notes.map((n, i) => this.isGiven(i) ? { ...n } : null);
       this.cursor = 1;

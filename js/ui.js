@@ -149,3 +149,82 @@ function setFeedback(box, kind, html, ...extra) {
 }
 function fbIcon(kind) { return `<span class="fb-ico">${kind === 'ok' ? ICON.check : kind === 'bad' ? ICON.cross : ICON.ear}</span>`; }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
+
+/* ---------- Einheit 2 building blocks ---------- */
+/* instructions: shown the first time an exercise is opened in a session (unless switched off), and from ⚙ */
+function howDialog(ex) {
+  if (ex.howDlg) ex.howDlg.d.remove();
+  const g = ex.howDlg = makeDialog(t(ex.howTitle || 'howShort'));
+  const off = toggleControl('how-off-' + ex.id, 'howHide', store.get('how:' + ex.id, false), v => store.set('how:' + ex.id, v));
+  g.body.append(el('ol', { class: 'how-list' }, ex.how.map(k => el('li', { html: t(k) }))), ex.howNote ? el('p', { class: 'hint' }, t(ex.howNote)) : '', off);
+  $('.dlg-foot .lbl', g.d).textContent = t('howGo');
+  g.open();
+}
+function howField(ex) {
+  return el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('howShort')),
+    btn('howOpen', ICON.ear, () => { App.menu.d.close(); howDialog(ex); }, 'btn-sec btn-sm'));
+}
+/* a chip that opens this exercise's settings (mode, range, motif …) */
+function settingsChip(text) {
+  const b = el('button', { type: 'button', class: 'chip chip-set', title: t('settings') }, el('span', { class: 'ico', html: ICON.sliders }), el('span', {}, text));
+  b.addEventListener('click', () => App.openSettings());
+  return b;
+}
+/* the notes an exercise can use, as buttons: tap one to write it into the selected slot */
+function scalePad(notes, onPick) {
+  return el('div', { class: 'scalepad', role: 'group', 'aria-label': t('tbLabel') },
+    notes.map(n => el('button', { type: 'button', class: 'key sp-key', onclick: () => onPick(n) }, noteName(n))));
+}
+/* one octave of a keyboard for answers (pitch classes, every spelling counts) */
+const PC_DE = ['C', 'Cis/Des', 'D', 'Dis/Es', 'E', 'F', 'Fis/Ges', 'G', 'Gis/As', 'A', 'Ais/B', 'H'];
+const PC_EN = ['C', 'C♯/D♭', 'D', 'D♯/E♭', 'E', 'F', 'F♯/G♭', 'G', 'G♯/A♭', 'A', 'A♯/B♭', 'B'];
+function pianoKeys(onPick) {
+  const wrap = el('div', { class: 'piano', role: 'group', 'aria-label': t('pianoLbl') });
+  const names = LANG === 'de' ? PC_DE : PC_EN;
+  [0, 2, 4, 5, 7, 9, 11].forEach((pc, i) => wrap.append(el('button', { type: 'button', class: 'pk pk-w', 'data-pc': pc,
+    style: `left:${(i * 100 / 7).toFixed(3)}%;width:${(100 / 7).toFixed(3)}%`, 'aria-label': names[pc], onclick: () => onPick(pc) },
+  el('span', { class: 'pk-n' }, names[pc]))));
+  [[1, 1], [3, 2], [6, 4], [8, 5], [10, 6]].forEach(([pc, i]) => {
+    const [a, b] = names[pc].split('/');
+    wrap.append(el('button', { type: 'button', class: 'pk pk-b', 'data-pc': pc,
+      style: `left:${(i * 100 / 7 - 4.7).toFixed(3)}%;width:9.4%`, 'aria-label': names[pc].replace('/', ' / '), onclick: () => onPick(pc) },
+    el('span', { class: 'pk-n' }, a, el('br'), b)));
+  });
+  wrap.mark = (pc, cls) => { const k = wrap.querySelector(`[data-pc="${pc}"]`); if (k) k.classList.add(cls); };
+  wrap.clear = () => $$('.pk', wrap).forEach(k => k.classList.remove('sel', 'ok', 'bad', 'want'));
+  wrap.lock = on => $$('.pk', wrap).forEach(k => { k.disabled = !!on; });
+  return wrap;
+}
+/* a quiet stopwatch: always visible, nothing is stored or compared out loud */
+function makeTimer() {
+  const fmt = s => (LANG === 'de' ? s.toFixed(1).replace('.', ',') : s.toFixed(1)) + ' s';
+  const num = el('span', { class: 'tm-num' }, fmt(0));
+  const fill = el('span', { class: 'tm-fill' });
+  const box = el('div', { class: 'timer', 'aria-hidden': 'true' }, num, el('span', { class: 'tm-track' }, fill));
+  let t0 = 0, raf = 0, on = false, last = Infinity;
+  const draw = () => {
+    const s = (performance.now() - t0) / 1000;
+    num.textContent = fmt(s);
+    fill.style.width = Math.min(100, s / 6 * 100).toFixed(1) + '%';
+    box.dataset.heat = s < 2.5 ? '0' : s < 5 ? '1' : '2';
+    if (on) raf = requestAnimationFrame(draw);
+  };
+  return {
+    el: box,
+    start() { t0 = performance.now(); on = true; box.className = 'timer run'; cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); },
+    // right answer faster than the last right one → a slightly brighter finish (and chime); never shown as a number
+    stop(right) {
+      if (!on) return null;
+      on = false;
+      cancelAnimationFrame(raf);
+      const s = (performance.now() - t0) / 1000;
+      num.textContent = fmt(s);
+      const quicker = right && s < last;
+      if (right) last = s;
+      box.className = 'timer ' + (right ? 'tm-ok' : 'tm-bad') + (quicker ? ' tm-fast' : '');
+      return { s, quicker };
+    },
+    reset() { on = false; cancelAnimationFrame(raf); num.textContent = fmt(0); fill.style.width = '0'; box.className = 'timer'; delete box.dataset.heat; },
+    get running() { return on; }
+  };
+}

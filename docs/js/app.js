@@ -6,22 +6,36 @@ const App = {
   hearInput: store.get('hearInput', false),
   active: null,
   hash: null,
-  // every exercise: its screen, start-screen tile and list card
-  list: [
-    { ex: ExInt, hash: 'intervalle', nav: 'int', short: 'tabInt', card: 'cardInt', icon: 'interval', tint: 'blue' },
-    { ex: ExLex, hash: 'rhythmus', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
-    { ex: ExMel, hash: 'melodie', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
-    { ex: ExSec, hash: 'sekunden', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
-    { ex: ExTer, hash: 'terzen', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
-    { ex: ExHar, hash: 'harmonie', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' }
+  unit: null,
+  // two units, each with its own page
+  units: [
+    { id: 'e1', hash: 'einheit-1', label: 'navE1', title: 'unit1', desc: 'unit1Desc', icon: 'unit1' },
+    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', desc: 'unit2Desc', icon: 'unit2' }
   ],
-  // bottom bar: five places; Melodie and Im Flug each hold two exercises
+  // every exercise: its screen, unit, group (one group shares the switch at the top), tile and card
+  list: [
+    { ex: ExInt, hash: 'intervalle', unit: 'e1', nav: 'int', short: 'tabInt', card: 'cardInt', icon: 'interval', tint: 'blue' },
+    { ex: ExLex, hash: 'rhythmus', unit: 'e1', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
+    { ex: ExMel, hash: 'melodie', unit: 'e1', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
+    { ex: ExSec, hash: 'sekunden', unit: 'e1', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
+    { ex: ExTer, hash: 'terzen', unit: 'e1', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
+    { ex: ExHar, hash: 'harmonie', unit: 'e1', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' },
+    { ex: ExModeSing, hash: 'modi-singen', unit: 'e2', nav: 'modi', short: 'tabMs', card: 'cardMs', icon: 'mic', tint: 'lilac', sub: 'subMs' },
+    { ex: ExModeDict, hash: 'modi-diktat', unit: 'e2', nav: 'modi', short: 'tabMd', card: 'cardMd', icon: 'melody', tint: 'sky', sub: 'subMd' },
+    { ex: ExModePat, hash: 'modi-muster', unit: 'e2', nav: 'modi', short: 'tabMp', card: 'cardMp', icon: 'pattern', tint: 'steel', sub: 'subMp' },
+    { ex: ExBlatt, hash: 'blattsingen', unit: 'e2', nav: 'blatt', short: 'tabBl', card: 'cardBl', icon: 'sheet', tint: 'sand' },
+    { ex: ExTwo, hash: 'zweistimmig', unit: 'e2', nav: 'zwei', short: 'tabTw', card: 'cardTw', icon: 'duo', tint: 'mint' },
+    { ex: ExCtxNote, hash: 'kontext-ton', unit: 'e2', nav: 'ctx', short: 'tabCxNote', card: 'cardCxNote', icon: 'context', tint: 'blue', sub: 'subCxNote' },
+    { ex: ExCtxIv, hash: 'kontext-zweiklang', unit: 'e2', nav: 'ctx', short: 'tabCxIv', card: 'cardCxIv', icon: 'context', tint: 'lilac', sub: 'subCxIv' },
+    { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'e2', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' }
+  ],
+  // header title of each group
+  groups: { int: 'navInt', mel: 'navMel', flug: 'navFlug', har: 'navHar', modi: 'navModi', blatt: 'navBlatt', zwei: 'navZwei', ctx: 'navCtx' },
+  // bottom bar: start and the two units
   navs: [
     { id: 'start', icon: 'home', label: 'navHome' },
-    { id: 'int', icon: 'interval', label: 'navInt' },
-    { id: 'mel', icon: 'melody', label: 'navMel' },
-    { id: 'flug', icon: 'flight', label: 'navFlug' },
-    { id: 'har', icon: 'harmony', label: 'navHar' }
+    { id: 'e1', icon: 'unit1', label: 'navE1' },
+    { id: 'e2', icon: 'unit2', label: 'navE2' }
   ],
 
   init() {
@@ -31,7 +45,8 @@ const App = {
       return;
     }
     this.home = el('section', { class: 'home', id: 'p-start', hidden: true });
-    $('#panels').append(this.home);
+    this.unitEl = el('section', { class: 'home unit-page', id: 'p-unit', hidden: true });
+    $('#panels').append(this.home, this.unitEl);
     this.list.forEach(it => {
       it.ex.root = el('section', { class: 'panel', id: 'p-' + it.hash, hidden: true });
       $('#panels').append(it.ex.root);
@@ -41,12 +56,15 @@ const App = {
     if (!('__installPrompt' in window)) { window.__installPrompt = null; addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installPrompt = e; document.dispatchEvent(new Event('installready')); }); }
     window.addEventListener('appinstalled', () => { window.__installPrompt = null; store.set('installHide', true); if (!this.active) this.renderHome(); });
     Backend.appStarted();
+    const known = h => h === 'start' || this.list.some(it => it.hash === h) || this.units.some(u => u.hash === h);
     const h = (location.hash || '').slice(1);
-    this.show(h === 'start' || this.list.some(it => it.hash === h) ? h : 'start');
+    this.show(known(h) ? h : 'start');
     window.addEventListener('hashchange', () => {
       const hh = location.hash.slice(1);
-      if (hh !== this.hash && (hh === 'start' || this.list.some(it => it.hash === hh))) this.show(hh);
+      if (hh !== this.hash && known(hh)) this.show(hh);
     });
+    // leaving the app (other tab, phone locked): stop the microphone and any running question
+    document.addEventListener('visibilitychange', () => { if (document.hidden && this.active && this.active.onHide) this.active.onHide(); });
 
     document.addEventListener('keydown', e => {
       const tg = e.target;
@@ -114,18 +132,16 @@ const App = {
     g.open();
   },
 
-  /* ---------- start screen ---------- */
+  /* ---------- start screen: both units with their exercises as tiles ---------- */
   renderHome() {
     const go = hash => () => this.show(hash);
-    const tiles = el('div', { class: 'tiles' }, this.list.map(it =>
-      el('button', { type: 'button', class: 'tile t-' + it.tint, onclick: go(it.hash) },
-        el('span', { class: 'tile-ico', html: ICON[it.icon] }), el('span', {}, t(it.short)))));
-    const cards = el('div', { class: 'list' }, this.list.map(it => {
-      return el('button', { type: 'button', class: 'card lcard', onclick: go(it.hash) },
-        el('span', { class: 'thumb t-' + it.tint, html: ICON[it.icon] }),
-        el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card))),
-        el('span', { class: 'circle', html: ICON.right }));
-    }));
+    const unitBlock = u => {
+      const tiles = el('div', { class: 'tiles' }, this.list.filter(it => it.unit === u.id).map(it =>
+        el('button', { type: 'button', class: 'tile t-' + it.tint, onclick: go(it.hash) },
+          el('span', { class: 'tile-ico', html: ICON[it.icon] }), el('span', {}, t(it.short)))));
+      return [el('div', { class: 'sec-h' }, el('h2', {}, t(u.title)),
+        el('button', { type: 'button', class: 'linkish', onclick: go(u.hash) }, t('unitAll'))), tiles];
+    };
     const paper = el('div', { class: 'card paper-tip' },
       el('span', { class: 'paper-ico', html: ICON.pencil }),
       el('p', {}, el('b', {}, t('paperTitle')), ' ', t('paperText')));
@@ -136,29 +152,41 @@ const App = {
     this.home.replaceChildren(
       paper,
       this.installCard(),
-      el('div', { class: 'sec-h' }, el('h2', {}, t('secExercises'))), tiles,
-      el('div', { class: 'sec-h' }, el('h2', {}, t('secAll'))), cards,
+      ...this.units.flatMap(unitBlock),
       fb ? el('div', { class: 'sec-h' }, el('h2', {}, t('fbSection'))) : '', fb);
+  },
+  /* ---------- a unit's page: all its exercises as cards ---------- */
+  renderUnit(u) {
+    const cards = el('div', { class: 'list' }, this.list.filter(it => it.unit === u.id).map(it =>
+      el('button', { type: 'button', class: 'card lcard', onclick: () => this.show(it.hash) },
+        el('span', { class: 'thumb t-' + it.tint, html: ICON[it.icon] }),
+        el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card))),
+        el('span', { class: 'circle', html: ICON.right }))));
+    this.unitEl.replaceChildren(el('p', { class: 'unit-intro' }, t(u.title + 'Intro')), cards);
   },
 
   /* ---------- header + sub-switch for the current screen ---------- */
   renderBar() {
     const bar = $('#appbar');
     const gear = iconBtn(ICON.gear, 'settings', () => this.openSettings(), 'icon-btn-lg');
-    if (!this.active) {
+    const cur = this.list.find(it => it.ex === this.active);
+    if (cur) {
+      const u = this.units.find(x => x.id === cur.unit);
+      bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show(u.hash), 'icon-btn-lg'),
+        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.groups[cur.nav])), el('p', {}, t(this.active.descKey))), gear);
+    } else if (this.unit) {
+      bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show('start'), 'icon-btn-lg'),
+        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.unit.title)), el('p', {}, t(this.unit.desc))), gear);
+    } else {
       bar.replaceChildren(el('span', { class: 'logo-chip', html: ICON.interval }),
         el('div', { class: 'appbar-text' }, el('h1', {}, t('greet')), el('p', {}, t('greetSub'))), gear);
-    } else {
-      bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show('start'), 'icon-btn-lg'),
-        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.navs.find(n => n.id === this.list.find(it => it.ex === this.active).nav).label)), el('p', {}, t(this.active.descKey))), gear);
     }
     const sub = $('#subtabs');
-    const cur = this.list.find(it => it.ex === this.active);
     const sibs = cur ? this.list.filter(it => it.nav === cur.nav) : [];
     sub.hidden = sibs.length < 2;
     sub.replaceChildren(...(sibs.length < 2 ? [] : sibs.map(it =>
       el('button', { type: 'button', class: 'subtab', role: 'tab', 'aria-selected': String(it === cur), onclick: () => this.show(it.hash) }, t(it.sub)))));
-    $$('.nav-b', $('#tabs')).forEach(b => b.setAttribute('aria-selected', String(b.dataset.nav === (cur ? cur.nav : 'start'))));
+    $$('.nav-b', $('#tabs')).forEach(b => b.setAttribute('aria-selected', String(b.dataset.nav === (this.unit ? this.unit.id : 'start'))));
   },
 
   buildChrome() {
@@ -167,12 +195,7 @@ const App = {
     tabs.replaceChildren(...this.navs.map(n => {
       const b = el('button', { type: 'button', class: 'nav-b', role: 'tab', 'data-nav': n.id, 'aria-selected': 'false' },
         el('span', { class: 'ico', html: ICON[n.icon] }), el('span', {}, t(n.label)));
-      b.addEventListener('click', () => {
-        if (n.id === 'start') { this.show('start'); return; }
-        const last = store.get('last:' + n.id);
-        const it = this.list.find(x => x.nav === n.id && x.hash === last) || this.list.find(x => x.nav === n.id);
-        this.show(it.hash);
-      });
+      b.addEventListener('click', () => this.show(n.id === 'start' ? 'start' : this.units.find(u => u.id === n.id).hash));
       return b;
     }));
     // header: quick language switch + one menu for everything global
@@ -242,12 +265,17 @@ const App = {
   show(hash) {
     Sound.stop();
     const it = this.list.find(x => x.hash === hash);
-    this.hash = it ? it.hash : 'start';
-    this.home.hidden = !!it;
+    const unit = it ? null : this.units.find(u => u.hash === hash) || null;
+    if (this.active && (!it || it.ex !== this.active) && this.active.onHide) this.active.onHide();
+    this.hash = it ? it.hash : unit ? unit.hash : 'start';
+    this.home.hidden = !!(it || unit);
+    this.unitEl.hidden = !unit;
     this.list.forEach(x => { x.ex.root.hidden = x !== it; });
     this.active = it ? it.ex : null;
+    this.unit = unit || (it ? this.units.find(u => u.id === it.unit) : null);
     this.renderBar();
-    if (!it) this.renderHome();
+    if (unit) this.renderUnit(unit);
+    else if (!it) this.renderHome();
     else {
       if (!it.built) { it.built = true; it.ex.build(); }
       else if (it.ex.stale) {
@@ -262,6 +290,7 @@ const App = {
       store.set('tab', it.hash);
       store.set('last:' + it.nav, it.hash);
       if (it.ex === ExMel && !store.get('howMelHide', false)) ExMel.showHow();
+      else if (it.ex.how && !it.ex.howSeen && !store.get('how:' + it.ex.id, false)) { it.ex.howSeen = true; howDialog(it.ex); }
     }
     window.scrollTo(0, 0);
     try { history.replaceState(null, '', '#' + this.hash); } catch (e) { /* sandboxed */ }
