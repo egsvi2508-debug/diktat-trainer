@@ -38,8 +38,14 @@ const App = {
     { id: 'e2', icon: 'unit2', label: 'navE2' }
   ],
 
+  // units not shown yet (the code stays; remove an id here to show the unit again)
+  hiddenUnits: ['e2'],
+
   init() {
     document.documentElement.lang = LANG;
+    this.units = this.units.filter(u => !this.hiddenUnits.includes(u.id));
+    this.list = this.list.filter(it => !this.hiddenUnits.includes(it.unit));
+    this.navs = this.navs.filter(n => !this.hiddenUnits.includes(n.id));
     if (!window.Vex || !window.Vex.Flow) {
       $('#panels').append(el('p', { class: 'feedback fb-bad' }, t('noVex')));
       return;
@@ -192,6 +198,7 @@ const App = {
   buildChrome() {
     // bottom bar
     const tabs = $('#tabs');
+    tabs.style.gridTemplateColumns = `repeat(${this.navs.length}, 1fr)`;
     tabs.replaceChildren(...this.navs.map(n => {
       const b = el('button', { type: 'button', class: 'nav-b', role: 'tab', 'data-nav': n.id, 'aria-selected': 'false' },
         el('span', { class: 'ico', html: ICON[n.icon] }), el('span', {}, t(n.label)));
