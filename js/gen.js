@@ -51,8 +51,8 @@ function randomMode(m, maxAcc, who) {
   }
   return makeMode(m < 0 ? 1 : m, 0);
 }
-// ranges in scale steps from the final: up to the 4th, 5th, 6th, octave, or plagal (4th below to 5th above)
-const MODE_RANGES = { q4: [0, 3], q5: [0, 4], q6: [0, 5], q8: [0, 7], plag: [-3, 4] };
+// ranges in scale steps from the final: up to the 4th, 5th, 6th or octave
+const MODE_RANGES = { q4: [0, 3], q5: [0, 4], q6: [0, 5], q8: [0, 7] };
 // diatonic index of the final so that the range [lo, hi] sits well on the staff (treble around G4/A4, bass around F3)
 function placeFinal(k, lo, hi, clef) {
   const target = clef === 'bass' ? 23.5 : 32.5;

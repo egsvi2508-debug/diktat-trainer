@@ -117,7 +117,7 @@ function renderDuoMini(host, pat, w = 76, scale = 0.8) {
 const ExTwo = {
   id: 'two', titleKey: 'twTitle', descKey: 'twDesc',
   how: ['twHow1', 'twHow2', 'twHow3', 'twHow4'], howTitle: 'twHowTitle',
-  S: Object.assign({ bars: 4, center: 'both', tempo: 63, rhythm: false, limit: false, countIn: true }, store.get('two.s', {})),
+  S: Object.assign({ bars: 4, center: 'both', tempo: 63, rhythm: false, limit: false, countIn: true }, store.get('two.s', {}), { limit: false }),
   task: null, ans: null, cur: null, checked: false, res: null, hit: null, playsLeft: 3, lastV: 'u', pickFor: null,
 
   save() { store.set('two.s', this.S); },
@@ -150,7 +150,6 @@ const ExTwo = {
       segControl('two-center', 'twKey', [['C', t('twC')], ['a', t('twA')], ['both', t('both')]], S.center, v => { S.center = v; this.save(); this.newTask(); }),
       toggleGroup('options',
         toggleControl('two-rh', 'twRhythm', S.rhythm, v => { S.rhythm = v; this.save(); this.newTask(); }),
-        toggleControl('two-limit', 'flLimit', S.limit, v => { S.limit = v; this.save(); this.render(); }),
         toggleControl('two-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); })));
   },
 
@@ -289,11 +288,17 @@ const ExTwo = {
     }
     this.ans[s] = sg;
     this.pickFor = null;
-    // on to the first empty note of this half bar (the voice you were writing first)
-    const order = this.lastV === 'l' ? ['l', 'u'] : ['u', 'l'];
+    // rhythm first, as in the melody dictation: straight on to the next half bar still without a rhythm;
+    // once every half bar has one, on to the first empty note
+    // (a changed rhythm stays in its half bar, on its first empty note)
+    const open = this.ans.map((a, i) => i).filter(i => !this.ans[i].pat);
+    const ns = old.pat ? null : open.find(i => i > s) ?? open[0];
     let next = null;
-    for (const v of order) { const k = sg[this.vKey(v)].findIndex((n, kk) => !n && !this.isGiven(s, kk)); if (k >= 0) { next = { s, v, k }; break; } }
-    this.cur = next || this.firstOpen();
+    if (ns == null && old.pat) {
+      const order = this.lastV === 'l' ? ['l', 'u'] : ['u', 'l'];
+      for (const v of order) { const k = sg[this.vKey(v)].findIndex((n, kk) => !n && !this.isGiven(s, kk)); if (k >= 0) { next = { s, v, k }; break; } }
+    }
+    this.cur = ns != null ? { s: ns, v: null, k: -1 } : next || this.firstOpen();
     setFeedback(this.P.feedback, '', '');
     this.render();
   },

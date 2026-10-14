@@ -162,12 +162,12 @@ const Sound = (() => {
   }
 
   /* ---------- playback ----------
-     events: [{t, midi, dur, vel, gain}] or [{t, click: true, accent}]
+     events: [{t, midi, dur, vel, gain}] or [{t, click: true, accent}] or [{t, buffer, offset, dur, gain}] (a recording)
      notes are humanized slightly (timing and loudness), chords stay together */
   function humanize(events) {
     const groups = {};
     return events.map(e => {
-      if (e.click || e.exact) return e;
+      if (e.click || e.exact || e.buffer) return e;
       const key = Math.round(e.t * 1000);
       if (!(key in groups)) groups[key] = e.t === 0 ? 0 : (Math.random() - 0.5) * 0.018;
       const spread = (Math.random() - 0.5) * 0.008;
@@ -188,6 +188,11 @@ const Sound = (() => {
       let total = 0.1;
       for (const e of humanize(events)) {
         if (e.click) click(bus, t0 + e.t, e.accent, e.soft);
+        else if (e.buffer) {
+          const s = ctx.createBufferSource(), g = ctx.createGain();
+          s.buffer = e.buffer; g.gain.value = e.gain ?? 1;
+          s.connect(g); g.connect(bus); s.start(t0 + e.t, e.offset || 0, e.dur);
+        }
         else piano(bus, t0 + e.t, e.midi, e.dur, e.vel, e.gain ?? 1);
         total = Math.max(total, e.t + (e.dur || 0.1));
       }

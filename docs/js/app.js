@@ -9,8 +9,8 @@ const App = {
   unit: null,
   // two units, each with its own page
   units: [
-    { id: 'e1', hash: 'einheit-1', label: 'navE1', title: 'unit1', desc: 'unit1Desc', icon: 'unit1' },
-    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', desc: 'unit2Desc', icon: 'unit2' }
+    { id: 'e1', hash: 'einheit-1', label: 'navE1', title: 'unit1', icon: 'unit1' },
+    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', icon: 'unit2' }
   ],
   // every exercise: its screen, unit, group (one group shares the switch at the top), tile and card
   list: [
@@ -22,12 +22,12 @@ const App = {
     { ex: ExHar, hash: 'harmonie', unit: 'e1', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' },
     { ex: ExModeSing, hash: 'modi-singen', unit: 'e2', nav: 'modi', short: 'tabMs', card: 'cardMs', icon: 'mic', tint: 'lilac', sub: 'subMs' },
     { ex: ExModeDict, hash: 'modi-diktat', unit: 'e2', nav: 'modi', short: 'tabMd', card: 'cardMd', icon: 'melody', tint: 'sky', sub: 'subMd' },
-    { ex: ExModePat, hash: 'modi-muster', unit: 'e2', nav: 'modi', short: 'tabMp', card: 'cardMp', icon: 'pattern', tint: 'steel', sub: 'subMp' },
     { ex: ExBlatt, hash: 'blattsingen', unit: 'e2', nav: 'blatt', short: 'tabBl', card: 'cardBl', icon: 'sheet', tint: 'sand' },
     { ex: ExTwo, hash: 'zweistimmig', unit: 'e2', nav: 'zwei', short: 'tabTw', card: 'cardTw', icon: 'duo', tint: 'mint' },
     { ex: ExCtxNote, hash: 'kontext-ton', unit: 'e2', nav: 'ctx', short: 'tabCxNote', card: 'cardCxNote', icon: 'context', tint: 'blue', sub: 'subCxNote' },
     { ex: ExCtxIv, hash: 'kontext-zweiklang', unit: 'e2', nav: 'ctx', short: 'tabCxIv', card: 'cardCxIv', icon: 'context', tint: 'lilac', sub: 'subCxIv' },
-    { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'e2', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' }
+    { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'e2', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' },
+    { ex: ExCtxSing, hash: 'kontext-singen', unit: 'e2', nav: 'ctx', short: 'tabCxSing', card: 'cardCxSing', icon: 'mic', tint: 'mint', sub: 'subCxSing' }
   ],
   // header title of each group
   groups: { int: 'navInt', mel: 'navMel', flug: 'navFlug', har: 'navHar', modi: 'navModi', blatt: 'navBlatt', zwei: 'navZwei', ctx: 'navCtx' },
@@ -39,7 +39,7 @@ const App = {
   ],
 
   // units not shown yet (the code stays; remove an id here to show the unit again)
-  hiddenUnits: ['e2'],
+  hiddenUnits: [],
 
   init() {
     document.documentElement.lang = LANG;
@@ -168,7 +168,7 @@ const App = {
         el('span', { class: 'thumb t-' + it.tint, html: ICON[it.icon] }),
         el('span', {}, el('h3', {}, t(it.ex.titleKey)), el('p', {}, t(it.card))),
         el('span', { class: 'circle', html: ICON.right }))));
-    this.unitEl.replaceChildren(el('p', { class: 'unit-intro' }, t(u.title + 'Intro')), cards);
+    this.unitEl.replaceChildren(cards);
   },
 
   /* ---------- header + sub-switch for the current screen ---------- */
@@ -179,19 +179,18 @@ const App = {
     if (cur) {
       const u = this.units.find(x => x.id === cur.unit);
       bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show(u.hash), 'icon-btn-lg'),
-        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.groups[cur.nav])), el('p', {}, t(this.active.descKey))), gear);
+        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.active.titleKey)), el('p', {}, t(this.active.descKey))), gear);
     } else if (this.unit) {
       bar.replaceChildren(iconBtn(ICON.left, 'back', () => this.show('start'), 'icon-btn-lg'),
-        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.unit.title)), el('p', {}, t(this.unit.desc))), gear);
+        el('div', { class: 'appbar-text' }, el('h1', {}, t(this.unit.title))), gear);
     } else {
       bar.replaceChildren(el('span', { class: 'logo-chip', html: ICON.interval }),
         el('div', { class: 'appbar-text' }, el('h1', {}, t('greet')), el('p', {}, t('greetSub'))), gear);
     }
+    // no switching between exercises inside an exercise: back to the unit, then pick another one
     const sub = $('#subtabs');
-    const sibs = cur ? this.list.filter(it => it.nav === cur.nav) : [];
-    sub.hidden = sibs.length < 2;
-    sub.replaceChildren(...(sibs.length < 2 ? [] : sibs.map(it =>
-      el('button', { type: 'button', class: 'subtab', role: 'tab', 'aria-selected': String(it === cur), onclick: () => this.show(it.hash) }, t(it.sub)))));
+    sub.hidden = true;
+    sub.replaceChildren();
     $$('.nav-b', $('#tabs')).forEach(b => b.setAttribute('aria-selected', String(b.dataset.nav === (this.unit ? this.unit.id : 'start'))));
   },
 

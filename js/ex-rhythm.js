@@ -251,7 +251,6 @@ const ExMel = {
     const off = toggleControl('how-off', 'howHide', store.get('howMelHide', false), v => store.set('howMelHide', v));
     g.body.append(
       el('ol', { class: 'how-list' }, ['how1', 'how2', 'how3', 'how4'].map(k => el('li', { html: t(k) }))),
-      el('p', { class: 'hint' }, t('howLex'), ' ', el('button', { type: 'button', class: 'linkish', onclick: () => { g.d.close(); App.show('rhythmus'); } }, t('howLexLink'))),
       off);
     $('.dlg-foot .lbl', g.d).textContent = t('howGo');
     g.open();

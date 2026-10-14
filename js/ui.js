@@ -156,7 +156,7 @@ function howDialog(ex) {
   if (ex.howDlg) ex.howDlg.d.remove();
   const g = ex.howDlg = makeDialog(t(ex.howTitle || 'howShort'));
   const off = toggleControl('how-off-' + ex.id, 'howHide', store.get('how:' + ex.id, false), v => store.set('how:' + ex.id, v));
-  g.body.append(el('ol', { class: 'how-list' }, ex.how.map(k => el('li', { html: t(k) }))), ex.howNote ? el('p', { class: 'hint' }, t(ex.howNote)) : '', off);
+  g.body.append(el('ol', { class: 'how-list' }, ex.how.filter(k => t(k)).map(k => el('li', { html: t(k) }))), ex.howNote ? el('p', { class: 'hint' }, t(ex.howNote)) : '', off);
   $('.dlg-foot .lbl', g.d).textContent = t('howGo');
   g.open();
 }
@@ -166,7 +166,9 @@ function howField(ex) {
 }
 /* a chip that opens this exercise's settings (mode, range, motif …) */
 function settingsChip(text) {
-  const b = el('button', { type: 'button', class: 'chip chip-set', title: t('settings') }, el('span', { class: 'ico', html: ICON.sliders }), el('span', {}, text));
+  // looks like a dropdown (outlined, square-ish, ▾) so it reads as something to change, unlike the round info chips
+  const b = el('button', { type: 'button', class: 'chip chip-set', title: t('settings') }, el('span', { class: 'ico', html: ICON.sliders }), el('span', {}, text),
+    el('span', { class: 'chev', 'aria-hidden': 'true', html: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' }));
   b.addEventListener('click', () => App.openSettings());
   return b;
 }

@@ -7,86 +7,59 @@
    soft metronome. Each note is marked as soon as its beat is over; afterwards the whole take is
    lined up again and judged note by note (wrong note · out of tune · not heard).
    ============================================================ */
-const RANGE_IDS = ['q4', 'q5', 'q6', 'q8', 'plag'];
+const RANGE_IDS = ['q4', 'q5', 'q6', 'q8'];
+const fixRange = S => { if (!RANGE_IDS.includes(S.range)) S.range = 'q5'; };
 const range = (a, b) => { const r = []; for (let x = a; x <= b; x++) r.push(x); return r; };
 
-/* settings shared by the mode exercises: mode, position (white keys / transposed), range, motif */
+/* settings shared by the mode exercises: mode, position (white keys / transposed), range (which notes appear) */
 function modeFields(ex, withRange) {
   const S = ex.S, id = ex.id, re = () => { ex.save(); ex.buildSettings(); ex.newTask(); };
+  fixRange(S);
   const names = LANG === 'de' ? MODE_DE : MODE_EN;
   const out = [
     segControl(id + '-mode', 'modeLbl2', names.map((n, i) => [i, n]).concat([[-1, t('modeAny')]]), S.mode, v => { S.mode = v; re(); }),
     segControl(id + '-pos', 'modePos', [[false, t('modeWhite')], [true, t('modeTransp')]], S.transp, v => { S.transp = v; re(); })];
-  if (withRange) out.push(
-    segControl(id + '-rng', 'rangeLbl', RANGE_IDS.map(r => [r, t('rg_' + r)]), S.range, v => {
-      S.range = v;
-      const [lo, hi] = MODE_RANGES[v];
-      if (S.motif !== 'all' && S.motif.split(',').map(Number).some(o => o < lo || o > hi)) S.motif = 'all';
-      ex.msel = null; re();
-    }),
-    motifPicker(ex));
+  if (withRange) {
+    // with a named mode in its own position, each range also shows its notes, e.g. "Quinte D–A"
+    const named = S.mode >= 0 && !S.transp, k = named ? makeMode(S.mode, 0) : null;
+    const lab = r => {
+      if (!named) return t('rg_' + r);
+      const [lo, hi] = MODE_RANGES[r], f = placeFinal(k, lo, hi, S.clef);
+      return t('rg_' + r) + ' ' + noteName(modeNote(k, f, lo)) + '–' + noteName(modeNote(k, f, hi));
+    };
+    out.push(segControl(id + '-rng', 'rangeLbl', RANGE_IDS.map(r => [r, lab(r)]), S.range, v => { S.range = v; re(); }));
+  }
   return out;
 }
-// the motif: "all combinations" or exactly four notes of the range, tapped one by one
-function motifPicker(ex) {
-  const S = ex.S, [lo, hi] = MODE_RANGES[S.range];
-  if (!ex.msel) ex.msel = S.motif === 'all' ? [] : S.motif.split(',').map(Number);
-  const sel = ex.msel;
-  const named = S.mode >= 0 && !S.transp;
-  const k = named ? makeMode(S.mode, 0) : null, f = named ? placeFinal(k, lo, hi, S.clef) : 0;
-  const lab = o => named ? noteName(modeNote(k, f, o)) : o >= 0 ? String(o + 1) : (o + 8) + '↓';
-  const hint = el('p', { class: 'hint motif-hint' });
-  const field = el('div', { class: 'field motif-field' });
-  const draw = () => {
-    const all = S.motif === 'all' && !sel.length;
-    const allB = el('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(all), onclick: () => {
-      sel.length = 0; S.motif = 'all'; ex.save(); draw(); ex.newTask();
-    } }, t('motifAll'));
-    const notes = range(lo, hi).map(o => el('button', { type: 'button', class: 'seg-b', 'aria-pressed': String(sel.includes(o)), onclick: () => {
-      const i = sel.indexOf(o);
-      if (i >= 0) sel.splice(i, 1);
-      else if (sel.length < 4) sel.push(o);
-      else { hint.textContent = t('motifMax'); return; }
-      if (sel.length === 4) { S.motif = sel.slice().sort((x, y) => x - y).join(','); ex.save(); ex.newTask(); }
-      draw();
-    } }, lab(o)));
-    hint.textContent = sel.length && sel.length < 4 ? t('motifMore', { n: 4 - sel.length }) : t(S.motif === 'all' ? 'motifAllInfo' : 'motifFixedInfo');
-    field.replaceChildren(el('span', { class: 'field-lbl' }, t('motifLbl')), el('div', { class: 'seg seg-multi' }, allB, ...notes), hint);
-  };
-  draw();
-  return field;
-}
-// a task for the motif exercises: mode, final, range and the bars
+// a task for the mode exercises: mode, final, range and the bars (each bar four different notes of the range)
 function motifTask(ex) {
   const S = ex.S;
+  fixRange(S);
   const k = randomMode(S.mode, S.transp ? 3 : 0, ex.id);
   const [lo, hi] = MODE_RANGES[S.range];
   const f = placeFinal(k, lo, hi, S.clef);
-  let pool = S.motif === 'all' ? range(lo, hi) : S.motif.split(',').map(Number).filter(o => o >= lo && o <= hi);
-  if (pool.length < 4) pool = range(lo, hi);
+  const pool = range(lo, hi);
   const bars = motifBars(pool, S.bars);
-  return { key: k, f, lo, hi, pool, fixed: S.motif !== 'all', notes: bars.flat().map(o => modeNote(k, f, o)) };
+  return { key: k, f, lo, hi, pool, notes: bars.flat().map(o => modeNote(k, f, o)) };
 }
+// mode and range as changeable chips (open the settings), then the first note to hear
 function motifChips(task, first) {
-  const chips = [soundChip(modeName(task.key), () => modeScaleEvents(task.key, task.f))];
+  const span = noteName(modeNote(task.key, task.f, task.lo)) + '–' + noteName(modeNote(task.key, task.f, task.hi));
   const c = soundChip(t('startChip', { n: noteName(first) }), () => [{ t: 0, midi: Note.midi(first), dur: 1.8 }]);
   c.classList.add('chip-first');
-  chips.push(c);
-  const span = noteName(modeNote(task.key, task.f, task.lo)) + '–' + noteName(modeNote(task.key, task.f, task.hi));
-  chips.push(settingsChip(task.fixed ? t('motifChip', { m: task.pool.map(o => noteName(modeNote(task.key, task.f, o))).join(' ') }) : t('rangeChip', { r: span })));
-  return chips;
+  return [settingsChip(t('modeChip', { m: modeName(task.key) })), settingsChip(t('rangeChip', { r: span })), c];
 }
 
 function makeSing(kind) {
   const isMode = kind === 'mode', id = isMode ? 'msing' : 'blatt';
   const defaults = isMode
-    ? { mode: 1, transp: false, range: 'q5', motif: 'all', bars: 8, tempo: 60, clef: 'treble', metro: true }
+    ? { mode: 1, transp: false, range: 'q5', bars: 8, tempo: 60, clef: 'treble', metro: true }
     : { pool: 'free', span: 7, chroma: false, bars: 4, tempo: 60, clef: 'treble', metro: true };
   return {
     id, kind, titleKey: isMode ? 'msTitle' : 'blTitle', descKey: isMode ? 'msDesc' : 'blDesc',
-    how: [isMode ? 'msHow1' : 'blHow1', 'singHow2', 'singHow3', 'singHow4'], howTitle: isMode ? 'msHowTitle' : 'blHowTitle', howNote: 'singPrivacy',
+    how: [isMode ? 'msHow1' : 'blHow1', 'singHow2', 'singHow3'], howTitle: isMode ? 'msHowTitle' : 'blHowTitle',
     S: Object.assign({}, defaults, store.get(id + '.s', {})),
-    task: null, phase: 'ready', marks: null, res: null, cur: -99, ctl: null, url: null, msel: null, abort: false,
+    task: null, phase: 'ready', marks: null, res: null, cur: -99, ctl: null, url: null, takeBuf: null, takeGain: 1, abort: false,
     get checked() { return this.phase === 'done'; },
     save() { store.set(this.id + '.s', this.S); },
 
@@ -101,6 +74,7 @@ function makeSing(kind) {
       P.controls.append(this.startBtn, this.againBtn, this.singBtn);
       this.melBtn = playButton('playMelody', () => this.melodyEvents());
       this.takeBtn = btn('playTake', ICON.play, () => this.playTake(), 'btn-sec btn-sm');
+      this.bothBtn = playButton('playTakeMel', () => this.bothEvents());
       const tu = this.tu = { lbl: el('span', { class: 'tu-lbl' }), tgt: el('span', { class: 'tu-tgt' }), dot: el('span', { class: 'tu-dot', hidden: true }), val: el('span', { class: 'tu-val' }) };
       tu.box = el('div', { class: 'tuner' }, tu.lbl, tu.tgt, el('span', { class: 'tu-track' }, el('span', { class: 'tu-mid' }), tu.dot), tu.val);
       watchWidth(P.score, () => this.render());
@@ -142,12 +116,24 @@ function makeSing(kind) {
       }
       this.phase = 'ready'; this.marks = null; this.res = null; this.cur = -99;
       if (this.url) { URL.revokeObjectURL(this.url); this.url = null; }
+      this.takeBuf = null;
       if (this.P) { setFeedback(this.P.feedback, '', ''); this.render(); }
     },
 
     melodyEvents() {
       const q = 60 / this.S.tempo;
       return this.task.notes.map((n, i) => ({ t: i * q, midi: Note.midi(n), dur: q * 1.02, vel: i % 4 === 0 ? 0.72 : 0.62 }));
+    },
+    // your take and the melody at the same time, lined up on the beats you sang (from one beat before the first note)
+    bothEvents() {
+      const r = this.res, b = this.takeBuf;
+      if (!r || !b || r.beat0 == null) return null;
+      const q = 60 / this.S.tempo, lead = clamp(r.beat0, 0, q), at = lead - r.beat0;
+      const off = Math.max(0, -at), n = this.task.notes.length - r.skip;
+      // balance: the voice is brought to a fixed, moderate level (a close microphone is far louder than the
+      // piano and would push it under the limiter); the melody plays a little louder than usual
+      return [{ t: Math.max(0, at), buffer: b, offset: off, dur: Math.max(0.1, b.duration - off), gain: this.takeGain }]
+        .concat(this.melodyEvents().slice(0, n).map(e => ({ ...e, t: e.t + lead, vel: 0.9, gain: 1.5 })));
     },
     playTake() {
       if (!this.url) return;
@@ -167,6 +153,7 @@ function makeSing(kind) {
       try { await Mic.open(); }
       catch (e) { this.micFail(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'micDenied' : 'micNo'); return; }
       if (this.url) { URL.revokeObjectURL(this.url); this.url = null; }
+      this.takeBuf = null;
       this.marks = this.task.notes.map(() => null);
       this.res = null; this.cur = -99; this.abort = false;
       this.phase = 'count';
@@ -239,7 +226,21 @@ function makeSing(kind) {
       else if (Math.abs(r.drift) >= 25) tip = t(r.drift < 0 ? 'singDriftDown' : 'singDriftUp', { c: Math.abs(r.drift) });
       else if (Math.abs(r.mean) >= 15) tip = t(r.mean < 0 ? 'singFlat' : 'singSharp', { c: Math.abs(r.mean) });
       const kind = r.ok === n ? 'ok' : right / Math.max(1, n) >= 0.7 ? 'info' : 'bad';
-      setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(parts.join(' '))}${tip ? '<br>' + esc(tip) : ''}</span>`, this.melBtn, this.url ? this.takeBtn : null);
+      setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(parts.join(' '))}${tip ? '<br>' + esc(tip) : ''}</span>`, this.melBtn, this.url ? this.takeBtn : null, this.url ? this.bothBtn : null);
+      this.bothBtn.hidden = true;
+      if (this.url) {
+        const url = this.url;
+        fetch(url).then(x => x.arrayBuffer()).then(a => Sound.ready().decodeAudioData(a)).then(buf => {
+          if (this.url !== url) return;
+          // loudness of the voice: 98th percentile of the sample level, scaled to about 0.22
+          const d = buf.getChannelData(0), step = Math.max(1, Math.floor(d.length / 40000)), lv = [];
+          for (let i = 0; i < d.length; i += step) lv.push(Math.abs(d[i]));
+          lv.sort((x, y) => x - y);
+          const p98 = lv.length ? lv[Math.floor(lv.length * 0.98)] : 0;
+          this.takeGain = p98 > 1e-4 ? clamp(0.22 / p98, 0.1, 6) : 1;
+          this.takeBuf = buf; this.bothBtn.hidden = false;
+        }).catch(() => {});
+      }
       if (right === n && !r.skip) Sound.chime(r.ok === n ? 2 : 1);
       Backend.exerciseDone(this.id);
       this.render();

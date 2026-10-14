@@ -179,7 +179,7 @@ function singTake(o) {
   const lat = clamp((ctx.outputLatency || ctx.baseLatency || 0.01) + 0.03, 0.02, 0.35);
   const live = lat + 0.05;
   const frames = [], recent = [];
-  let T0 = null, timer = null, done = false, judged = -1, rec = null;
+  let T0 = null, timer = null, done = false, judged = -1, rec = null, recAt = null;
   const finish = async upTo => {
     if (done) return;
     done = true;
@@ -187,14 +187,17 @@ function singTake(o) {
     Sound.stop();
     const url = rec ? await rec.stop() : null;
     if (T0 == null || upTo === -1) { o.onEnd(null, url); return; }
-    o.onEnd(gradeTake(frames, o.targets, T0, q, lat, upTo), url);
+    // where beat 1 (as sung) sits in the recording – to play the take back together with the melody
+    const r = gradeTake(frames, o.targets, T0, q, lat, upTo);
+    r.beat0 = T0 + r.offset - recAt;
+    o.onEnd(r, url);
   };
   Sound.play(ev, {
     onLoading: o.onLoading,
     onStart: t0 => {
       if (done) return;
       T0 = t0 + CI * q;
-      rec = Mic.recorder();
+      rec = Mic.recorder(); recAt = ctx.currentTime;
       if (o.onStart) o.onStart();
       timer = setInterval(() => {
         const f = Mic.frame();

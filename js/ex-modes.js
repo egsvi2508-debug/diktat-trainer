@@ -8,13 +8,13 @@
 function makeModeDict(kind) {
   const isMotif = kind === 'motif', id = isMotif ? 'mdict' : 'mpat';
   const defaults = isMotif
-    ? { mode: 1, transp: false, range: 'q5', motif: 'all', bars: 8, tempo: 60, clef: 'treble', limit: false, countIn: true, help: false }
+    ? { mode: 1, transp: false, range: 'q5', bars: 8, tempo: 60, clef: 'treble', limit: false, countIn: true, help: false }
     : { mode: 1, transp: false, mixed: false, bars: 8, tempo: 66, clef: 'treble', limit: false, countIn: true, help: false };
   return {
     id, kind, titleKey: isMotif ? 'mdTitle' : 'mpTitle', descKey: isMotif ? 'mdDesc' : 'mpDesc',
     how: isMotif ? ['mdHow1', 'dictHow2', 'dictHow3', 'dictHow4'] : ['mpHow1', 'dictHow2', 'dictHow3', 'dictHow4'], howTitle: isMotif ? 'mdHowTitle' : 'mpHowTitle',
-    S: Object.assign({}, defaults, store.get(id + '.s', {})),
-    task: null, ans: null, cursor: 1, checked: false, res: null, hit: null, playsLeft: 3, msel: null,
+    S: Object.assign({}, defaults, store.get(id + '.s', {}), { limit: false }),
+    task: null, ans: null, cursor: 1, checked: false, res: null, hit: null, playsLeft: 3,
 
     save() { store.set(this.id + '.s', this.S); },
     build() {
@@ -40,7 +40,6 @@ function makeModeDict(kind) {
         segControl(id + '-clef', 'clefLbl', [['treble', t('clefTreble')], ['bass', t('clefBass')]], S.clef, v => { S.clef = v; re(); }),
         toggleGroup('options',
           toggleControl(id + '-help', 'dictHelp', S.help, v => { S.help = v; this.save(); this.newTask(); }),
-          toggleControl(id + '-limit', 'flLimit', S.limit, v => { S.limit = v; this.save(); this.render(); }),
           toggleControl(id + '-count', 'countIn', S.countIn, v => { S.countIn = v; this.save(); })));
     },
 
@@ -218,4 +217,3 @@ function dockScale(P, ex, label, note, notes) {
         b(ICON.del, 'tbClear', () => ex.cmd('clear'), 'icon-del'))));
 }
 const ExModeDict = makeModeDict('motif');
-const ExModePat = makeModeDict('pattern');
