@@ -142,7 +142,7 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde',
 
     // ---------- units ----------
-    unit1: 'Einheit 1', unit2: 'Einheit 2', navE1: 'Einheit 1', navE2: 'Einheit 2', unitAll: 'Alle anzeigen',
+    unit1: 'Einheit 1 · 05/10/2026', unit2: 'Einheit 2 · 12/10/2026', navE1: 'Einheit 1', navE2: 'Einheit 2', unitAll: 'Alle anzeigen',
     unit1Desc: 'Intervalle · Rhythmus & Melodie · Diktat im Flug · Harmonie',
     unit2Desc: 'Modi · Blattsingen · Zweistimmig · Im Kontext',
     unit1Intro: 'Intervalle notieren, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug (nur Sekunden oder nur Terzen) und Harmoniefolgen.',
@@ -375,7 +375,7 @@ const I18N = {
     harFirstBass: 'first bass note: {n}', harNChords: '{n} chords',
 
     // ---------- units ----------
-    unit1: 'Unit 1', unit2: 'Unit 2', navE1: 'Unit 1', navE2: 'Unit 2', unitAll: 'Show all',
+    unit1: 'Unit 1 · 05/10/2026', unit2: 'Unit 2 · 12/10/2026', navE1: 'Unit 1', navE2: 'Unit 2', unitAll: 'Show all',
     unit1Desc: 'Intervals · Rhythm & melody · Dictation on the fly · Harmony',
     unit2Desc: 'Modes · Sight singing · Two voices · In context',
     unit1Intro: 'Notating intervals, rhythm and melody dictation in 6/8, dictation on the fly (only seconds or only thirds) and progressions.',
