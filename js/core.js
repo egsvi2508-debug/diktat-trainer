@@ -44,7 +44,8 @@ const store = {
 };
 
 /* ---------- language ---------- */
-let LANG = store.get('lang', ((navigator.language || 'de').toLowerCase().startsWith('de') ? 'de' : 'en'));
+// German unless English was picked in the settings (no longer follows the browser language)
+let LANG = store.get('lang', 'de');
 function t(key, vars) {
   let s = (I18N[LANG] && I18N[LANG][key]) ?? I18N.de[key] ?? key;
   if (vars) s = s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
