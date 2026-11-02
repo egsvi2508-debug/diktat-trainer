@@ -9,14 +9,18 @@
      on its beat. Each beat is judged on its own from the middle of the beat (12 % to 95 %).
    ============================================================ */
 const Mic = (() => {
-  let stream = null, src = null, an = null, buf = null, ctx = null;
+  let stream = null, src = null, an = null, buf = null, bytes = null, ctx = null;
+  // links opened inside WhatsApp, Instagram & co. use a built-in browser that often has no microphone
+  const inApp = () => /Instagram|FBAN|FBAV|WhatsApp|Line\/|Snapchat|TikTok|LinkedInApp|GSA\//i.test(navigator.userAgent);
   const MIN_HZ = 65, MAX_HZ = 1100, RMS_FLOOR = 0.008, THRESH = 0.15;
 
   const supported = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
   /* Phones differ a lot here, so step by step:
      1. wake the sound engine while the tap still counts as a tap (browsers only allow that then)
      2. ask for the microphone – with plain settings if the browser refuses the detailed ones
-     3. connect it; if this browser cannot mix the microphone's sample rate with the engine's, rebuild the engine
+     3. connect it at the microphone's own sample rate: when the rates differ the engine is rebuilt to match
+        (iPhones switch the hardware rate when recording starts and would otherwise hear every pitch too high or
+        too low; Firefox and some Android phones refuse to connect at all)
      4. if the engine is still asleep (the permission question took too long), ask for one more tap */
   async function open() {
     ctx = Sound.ready();
@@ -32,9 +36,10 @@ const Mic = (() => {
       if (e && ['NotAllowedError', 'SecurityError', 'NotFoundError'].includes(e.name)) throw e;
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     }
+    const tr = stream.getAudioTracks()[0], rate = tr && tr.getSettings ? tr.getSettings().sampleRate : undefined;
+    if (rate && Math.abs(rate - ctx.sampleRate) > 1) ctx = Sound.rebuild(rate);
     try { src = ctx.createMediaStreamSource(stream); }
     catch (e) {
-      const tr = stream.getAudioTracks()[0], rate = tr && tr.getSettings ? tr.getSettings().sampleRate : undefined;
       ctx = Sound.rebuild(rate);
       src = ctx.createMediaStreamSource(stream);
     }
@@ -42,6 +47,7 @@ const Mic = (() => {
     an.fftSize = 2048;
     src.connect(an);
     buf = new Float32Array(an.fftSize);
+    bytes = an.getFloatTimeDomainData ? null : new Uint8Array(an.fftSize);   // older iPhones only have the byte version
     // iPhones pause the engine when recording starts – wake it again (and again, if it happens later)
     ctx.onstatechange = () => { if (an && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {}); };
     if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { /* see below */ } }
@@ -53,6 +59,7 @@ const Mic = (() => {
     if (window.isSecureContext === false) return t('micInsecure');
     if (!supported()) return t('micBrowser');
     const n = e && e.name;
+    if (inApp() && n !== 'Asleep') return t('micBrowser');
     if (n === 'Asleep') return t('micAgain');
     if (n === 'NotAllowedError' || n === 'SecurityError') return t('micDenied');
     if (n === 'NotFoundError' || n === 'OverconstrainedError') return t('micNotFound');
@@ -97,7 +104,8 @@ const Mic = (() => {
   }
   // one frame now: t = audio-clock time of the middle of the analysed window, midi = fractional pitch or null
   function frame() {
-    an.getFloatTimeDomainData(buf);
+    if (bytes) { an.getByteTimeDomainData(bytes); for (let i = 0; i < bytes.length; i++) buf[i] = (bytes[i] - 128) / 128; }
+    else an.getFloatTimeDomainData(buf);
     const r = yin(buf, ctx.sampleRate);
     return { t: ctx.currentTime - buf.length / 2 / ctx.sampleRate, midi: r.freq ? 69 + 12 * Math.log2(r.freq / 440) : null, rms: r.rms };
   }
