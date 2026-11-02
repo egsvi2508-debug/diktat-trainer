@@ -342,10 +342,12 @@ function renderChorale(host, task, show, opts = {}) {
   const rowH = 228 + nRows * 24 + (show.G ? 14 : 0);
   const { ctx, svg } = vfSurface(host, lines.length * rowH + 6, scale);
   const sig = task.key.sig;
-  const mw = (avail - extra) / (lines.length === 1 ? nm : mpl);
+  // a single chord is one whole note in a short bar, centred
+  const whole = n === 1;
+  const mw = whole ? Math.min(avail - extra, 150) : (avail - extra) / (lines.length === 1 ? nm : mpl);
   lines.forEach((ms, li) => {
     const y0 = 2 + li * rowH;
-    let x = 8;
+    let x = whole ? 8 + (avail - extra - mw) / 2 : 8;
     const slots = [];
     let trTop = 0, bsTop = 0, midY = 0;
     ms.forEach((mIdx, mi) => {
@@ -360,8 +362,9 @@ function renderChorale(host, task, show, opts = {}) {
       new VF.StaveConnector(tr, bs).setType('singleRight').setContext(ctx).draw();
       const idx = [mIdx * 2, mIdx * 2 + 1].filter(i => i < n);
       const mk = (voice, clef, stem) => {
-        const evs = idx.map(i => ({ dur: 'h', note: chords[i][voice], stem, color: opts.color ? opts.color(i, voice) : undefined }));
-        if (idx.length === 1) evs.push({ dur: 'h', note: null });
+        // an empty bass still gets an invisible note: the chord's position is measured from it
+        const evs = idx.map(i => ({ dur: whole ? 'w' : 'h', note: chords[i][voice], ph: voice === 0 && !chords[i][0] ? 'note' : undefined, stem, color: opts.color ? opts.color(i, voice) : undefined }));
+        if (idx.length === 1 && !whole) evs.push({ dur: 'h', note: null });
         markAccidentals(evs, sig);
         return evs.map(e => mkNote(e, clef));
       };
@@ -374,12 +377,16 @@ function renderChorale(host, task, show, opts = {}) {
       const cxs = idx.map((i, k) => (nB[k].getNoteHeadBeginX() + nB[k].getNoteHeadEndX()) / 2);
       idx.forEach((i, k) => {
         const x0 = k === 0 ? ns - 6 : (cxs[k - 1] + cxs[k]) / 2, x1 = k === idx.length - 1 ? tr.getNoteEndX() : (cxs[k] + cxs[k + 1]) / 2;
-        slots.push({ id: 'c' + i, x0, x1, cx: cxs[k], locked: i === 0 });
+        slots.push({ id: 'c' + i, x0, x1, cx: cxs[k], locked: opts.lockFirst !== false && i === 0 });
         if (opts.sel === i) behind(svg, svgEl('rect', { x: x0 + 2, y: trTop - 30, width: x1 - x0 - 4, height: bs.getYForLine(4) - trTop + 60, rx: 10, class: 'sel' }));
       });
       let ly = bs.getYForLine(4) + 36;
       idx.forEach((i, k) => {
         const cx = (nB[k].getNoteHeadBeginX() + nB[k].getNoteHeadEndX()) / 2;
+        // a word under the chord (e.g. "eng" / "weit" in Lagen)
+        const lb = opts.labels && opts.labels[i];
+        if (lb && lb.text) svg.appendChild(svgEl('text', { x: cx, y: ly + 6, class: 'cc-lbl' + (lb.cls ? ' ' + lb.cls : '') }, lb.text));
+        if (!show.G && !show.S && !show.F) return;
         const prevId = i > 0 ? task.ids[i - 1] : null;
         let yy = ly;
         if (show.G) {

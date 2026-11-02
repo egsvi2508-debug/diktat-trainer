@@ -28,7 +28,7 @@ function patternName(p) {
     : { 1: '16th', 2: '8th', 3: 'dotted 8th', 4: 'quarter', 6: 'dotted quarter' };
   const runs = [];
   p.durs.forEach(u => { const r = runs[runs.length - 1]; if (r && r.u === u) r.n++; else runs.push({ u, n: 1 }); });
-  return runs.map(r => (r.n > 1 ? r.n + '× ' : '') + names[r.u]).join(' · ');
+  return runs.map(r => (r.n > 1 ? r.n + '× ' : '') + names[r.u]).join(', ');
 }
 
 /* Small rhythm picture on a one-line staff, in normal notation (no ties).
@@ -484,7 +484,7 @@ const ExMel = {
       P.dock.append(this.palette);
       if (changing && !S.rhythmOnly) P.dock.append(btn('backToNotes', ICON.left, () => { this.pickFor = null; this.render(); }, 'btn-sec btn-sm'));
     } else {
-      dockNote(P, this, where + ' · ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
+      dockNote(P, this, where + ', ' + (this.cur.k + 1) + '.', this.ans[this.cur.b].notes[this.cur.k], { clearKey: 'tbClearGroup' });
       P.dock.append(btn('changeRhythm', ICON.rhythm, () => { this.pickFor = this.cur.b; this.render(); }, 'btn-sec btn-sm change-rhythm'));
     }
     syncControls(this);

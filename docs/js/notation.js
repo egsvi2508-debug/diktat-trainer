@@ -42,6 +42,7 @@ const ICON = {
   duo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9c2.5-3.2 5 3.2 7.5 0s5-3.2 7.5 0c1 1.3 2 1.6 3 1.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 16c2.5 2.6 5-2.6 7.5 0s5 2.6 7.5 0c1-1 2-1.3 3-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
   context: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="7.5" cy="18.2" rx="3" ry="2.2" transform="rotate(-20 7.5 18.2)" fill="currentColor"/><ellipse cx="7.5" cy="13.6" rx="3" ry="2.2" transform="rotate(-20 7.5 13.6)" fill="currentColor"/><ellipse cx="7.5" cy="9" rx="3" ry="2.2" transform="rotate(-20 7.5 9)" fill="currentColor"/><ellipse cx="17.4" cy="5.8" rx="3" ry="2.2" transform="rotate(-20 17.4 5.8)" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>',
   unit1: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 9.4 12.8 7.6v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  unit3: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.3 8.6h5.2l-2.9 3.2c1.7-.1 3 .9 3 2.4 0 1.5-1.3 2.6-3 2.6-1.1 0-2-.4-2.6-1.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   unit2: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.4 9.6a2.7 2.7 0 0 1 5.3.8c0 1.3-.9 2.1-2 3l-3.3 3.2h5.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 };
 
@@ -453,4 +454,44 @@ function watchWidth(host, fn) {
     raf = requestAnimationFrame(fn);
   });
   ro.observe(host);
+}
+
+/* a small picture of a grand staff (both clefs, key signature) with a few whole notes –
+   notes from c¹ up go into the treble staff, the rest into the bass staff */
+function miniGrand(notes, key, scale = 0.8) {
+  const host = el('span', { class: 'mini-grand', 'aria-hidden': 'true' });
+  const probe = new VF.Stave(0, 0, 300).addClef('treble').addKeySignature(key.vf);
+  const W = probe.getNoteStartX() + 46, H = 190, top = -16;
+  const r = new VF.Renderer(host, VF.Renderer.Backends.SVG);
+  r.resize(Math.ceil(W * scale), Math.ceil(H * scale));
+  const ctx = r.getContext();
+  ctx.scale(scale, scale);
+  ctx.setFillStyle('currentColor');
+  ctx.setStrokeStyle('currentColor');
+  const tr = new VF.Stave(2, top, W - 4).addClef('treble').addKeySignature(key.vf);
+  const bs = new VF.Stave(2, top + 92, W - 4).addClef('bass').addKeySignature(key.vf);
+  const ns = Math.max(tr.getNoteStartX(), bs.getNoteStartX());
+  tr.setNoteStartX(ns); bs.setNoteStartX(ns);
+  tr.setEndBarType(VF.BarlineType.NONE); bs.setEndBarType(VF.BarlineType.NONE);
+  tr.setContext(ctx).draw(); bs.setContext(ctx).draw();
+  ['brace', 'singleLeft'].forEach(tp => new VF.StaveConnector(tr, bs).setType(tp).setContext(ctx).draw());
+  const mk = (list, clef) => {
+    if (!list.length) return new VF.GhostNote({ duration: 'w' });
+    const sn = new VF.StaveNote({ keys: list.map(Note.vfKey), duration: 'w', clef });
+    list.forEach((n, i) => { if (n.a !== key.sig[mod(n.d, 7)]) sn.addModifier(new VF.Accidental(ACC_VF[n.a]), i); });
+    return sn;
+  };
+  const sorted = notes.slice().sort((a, b) => a.d - b.d);
+  const vT = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables([mk(sorted.filter(n => n.d >= 28), 'treble')]);
+  const vB = new VF.Voice({ num_beats: 4, beat_value: 4 }).setMode(VF.Voice.Mode.SOFT).addTickables([mk(sorted.filter(n => n.d < 28), 'bass')]);
+  new VF.Formatter().joinVoices([vT]).joinVoices([vB]).format([vT, vB], Math.max(20, tr.getNoteEndX() - ns - 8));
+  vT.draw(ctx, tr); vB.draw(ctx, bs);
+  return host;
+}
+/* an info chip with such a picture: tap to hear the notes */
+function miniGrandChip(label, notes, key, getEvents) {
+  const b = el('button', { type: 'button', class: 'chip chip-sound chip-mini', title: t('tapToHear'), 'aria-label': label + ': ' + notes.map(n => noteName(n)).join(', ') },
+    el('span', { class: 'chip-mini-lbl' }, label, el('span', { class: 'ico', html: ICON.speaker })), miniGrand(notes, key));
+  b.addEventListener('click', () => { const ev = getEvents(); if (ev && ev.length) Sound.play(ev); });
+  return b;
 }

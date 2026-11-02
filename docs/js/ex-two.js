@@ -370,8 +370,7 @@ const ExTwo = {
     if (!this.P || !this.task) return;
     const P = this.P, C = notaColors(), S = this.S, task = this.task;
     const g = task.segs[0], firsts = () => [{ t: 0, midi: Note.midi(g.up[0]), dur: 1.8 }, { t: 0, midi: Note.midi(g.lo[0]), dur: 1.8 }];
-    const c = soundChip(t('twFirst', { u: noteName(g.up[0]), l: noteName(g.lo[0]) }), firsts);
-    c.classList.add('chip-first');
+    const c = miniGrandChip(t('twFirst'), [g.up[0], g.lo[0]], task.key, firsts);
     P.info.replaceChildren(soundChip(keyName(task.key), () => cadenceEvents(task.key)), c);
     P.opts.replaceChildren(lengthControl('lenBars', [2, 4, 6, 8], S.bars, v => { S.bars = v; this.save(); this.newTask(); }),
       tempoControl('tempoLbl', S.tempo, 40, 108, 3, v => '♩ = ' + v, v => { S.tempo = v; this.save(); }));

@@ -7,10 +7,11 @@ const App = {
   active: null,
   hash: null,
   unit: null,
-  // two units, each with its own page
+  // the units, each with its own page
   units: [
     { id: 'e1', hash: 'einheit-1', label: 'navE1', title: 'unit1', icon: 'unit1' },
-    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', icon: 'unit2' }
+    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', icon: 'unit2' },
+    { id: 'e3', hash: 'einheit-3', label: 'navE3', title: 'unit3', icon: 'unit3' }
   ],
   // every exercise: its screen, unit, group (one group shares the switch at the top), tile and card
   list: [
@@ -27,15 +28,20 @@ const App = {
     { ex: ExCtxNote, hash: 'kontext-ton', unit: 'e2', nav: 'ctx', short: 'tabCxNote', card: 'cardCxNote', icon: 'context', tint: 'blue', sub: 'subCxNote' },
     { ex: ExCtxIv, hash: 'kontext-zweiklang', unit: 'e2', nav: 'ctx', short: 'tabCxIv', card: 'cardCxIv', icon: 'context', tint: 'lilac', sub: 'subCxIv' },
     { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'e2', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' },
-    { ex: ExCtxSing, hash: 'kontext-singen', unit: 'e2', nav: 'ctx', short: 'tabCxSing', card: 'cardCxSing', icon: 'mic', tint: 'mint', sub: 'subCxSing' }
+    { ex: ExCtxSing, hash: 'kontext-singen', unit: 'e2', nav: 'ctx', short: 'tabCxSing', card: 'cardCxSing', icon: 'mic', tint: 'mint', sub: 'subCxSing' },
+    { ex: ExAud, hash: 'audiation', unit: 'e3', nav: 'aud', short: 'tabAud', card: 'cardAud', icon: 'mic', tint: 'lilac' },
+    { ex: ExLagen, hash: 'lagen', unit: 'e3', nav: 'lagen', short: 'tabLg', card: 'cardLg', icon: 'harmony', tint: 'mint' },
+    { ex: ExBassTri, hash: 'bass-dreiklaenge', unit: 'e3', nav: 'bass', short: 'tabBsTri', card: 'cardBsTri', icon: 'context', tint: 'sky' },
+    { ex: ExBassSev, hash: 'bass-septakkorde', unit: 'e3', nav: 'bass', short: 'tabBsSev', card: 'cardBsSev', icon: 'context', tint: 'sand' }
   ],
   // header title of each group
-  groups: { int: 'navInt', mel: 'navMel', flug: 'navFlug', har: 'navHar', modi: 'navModi', blatt: 'navBlatt', zwei: 'navZwei', ctx: 'navCtx' },
-  // bottom bar: start and the two units
+  groups: { int: 'navInt', mel: 'navMel', flug: 'navFlug', har: 'navHar', modi: 'navModi', blatt: 'navBlatt', zwei: 'navZwei', ctx: 'navCtx', aud: 'navAud', lagen: 'navLg', bass: 'navBs' },
+  // bottom bar: start and the units
   navs: [
     { id: 'start', icon: 'home', label: 'navHome' },
     { id: 'e1', icon: 'unit1', label: 'navE1' },
-    { id: 'e2', icon: 'unit2', label: 'navE2' }
+    { id: 'e2', icon: 'unit2', label: 'navE2' },
+    { id: 'e3', icon: 'unit3', label: 'navE3' }
   ],
 
   // units not shown yet (the code stays; remove an id here to show the unit again)
@@ -217,12 +223,15 @@ const App = {
       el('h4', { class: 'set-h' }, t('general')),
       segControl('g-lang', 'langLbl', [['de', 'Deutsch'], ['en', 'English']], LANG, v => { this.menu.d.close(); this.setLang(v); }),
       vol,
+      segControl('g-instr', 'instrLbl', [['piano', t('instrPiano')], ['cello', t('instrCello')], ['trumpet', t('instrTrumpet')], ['clarinet', t('instrClarinet')]],
+        Sound.instrument, v => Sound.setInstrument(v)),
       segControl('g-sens', 'dragSens', [[1, t('sensFine')], [2, t('sensMid')], [3, t('sensFast')]], store.get('dragSens', 2), v => store.set('dragSens', v)),
       toggleGroup('sound', hear, el('p', { class: 'hint' }, t('hearInputTip'))),
       Backend.on() ? el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('fbSection')),
         el('div', { class: 'row' }, btn('fbCardTitle', ICON.chat, () => { this.menu.d.close(); this.openFeedback(); }, 'btn-sec btn-sm'))) : '',
-      Backend.on() ? toggleGroup('privacy', toggleControl('g-stats', 'statsShare', store.get('shareStats', true), v => store.set('shareStats', v)),
-        el('p', { class: 'hint' }, t('statsShareInfo'))) : '',
+      // privacy: the info, and one button that removes everything this app saved on the device
+      el('div', { class: 'field' }, el('span', { class: 'field-lbl' }, t('privacy')),
+        el('div', { class: 'row' }, btn('legalLink', ICON.sheet, () => { this.menu.d.close(); this.openLegal(); }, 'btn-sec btn-sm'), this.wipeBtn())),
       el('div', { class: 'field keys-field' }, el('span', { class: 'field-lbl' }, t('keysTitle')), keys),
       el('div', { class: 'field about' }, el('span', { class: 'field-lbl' }, t('aboutTitle')), el('p', { class: 'hint' }, t('footer')), el('p', { class: 'hint' }, t('credits')))
     );
@@ -242,7 +251,7 @@ const App = {
       el('p', { class: 'hint' }, t('fbIntro')),
       segControl('fb-type', 'fbType', [['idea', t('fbIdea')], ['bug', t('fbBug')], ['praise', t('fbPraise')]], type, v => { type = v; }),
       el('div', { class: 'field' }, el('label', { class: 'field-lbl', for: 'fb-text' }, t('fbText')), ta),
-      el('p', { class: 'hint' }, t('fbAnon')), status);
+      status);
     const send = btn('fbSend', ICON.next, null, 'btn-ink');
     $('.dlg-foot', g.d).replaceChildren(send);
     send.onclick = async () => {
@@ -260,6 +269,23 @@ const App = {
     };
     g.open();
     setTimeout(() => ta.focus(), 50);
+  },
+
+  // first tap asks, second tap deletes every saved setting of this app on this device
+  wipeBtn() {
+    const b = btn('wipeData', ICON.del, () => {
+      if (!b.classList.contains('armed')) { b.classList.add('armed'); $('.lbl', b).textContent = t('wipeSure'); return; }
+      try { Object.keys(localStorage).filter(k => k.startsWith('sdt:')).forEach(k => localStorage.removeItem(k)); } catch (e) { /* storage blocked */ }
+      location.reload();
+    }, 'btn-sec btn-sm');
+    return b;
+  },
+  /* Datenschutz (js/legal.js) */
+  openLegal() {
+    if (this.legalDlg) this.legalDlg.d.remove();
+    const g = this.legalDlg = makeDialog(t('legalLink'));
+    g.body.append(el('div', { class: 'legal', html: legalHtml() }));
+    g.open();
   },
 
   openSettings() {

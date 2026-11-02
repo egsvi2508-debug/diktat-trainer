@@ -7,7 +7,7 @@ Outputs
 
 Run:  python3 build_webapp.py
 """
-import base64, hashlib, json, re, shutil, urllib.request
+import base64, hashlib, json, re, shutil, subprocess, urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -20,12 +20,22 @@ UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chr
 SAMPLE_URL = 'https://tonejs.github.io/audio/salamander/{}.mp3'   # Salamander Grand Piano, A. Holm, CC BY 3.0
 NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B']
 SAMPLES = [NOTE_NAMES[m % 12] + str(m // 12 - 1) for m in range(33, 97, 3)]   # A1 … C7, same list as js/audio.js
+# recorded cello, trumpet and clarinet (tonejs-instruments by N. Brosowsky, CC BY 3.0) – same lists as js/audio.js.
+# Each is cut to 4 s, made mono and brought to the loudness of the piano (needs ffmpeg).
+INSTR_URL = 'https://nbrosowsky.github.io/tonejs-instruments/samples/{}/{}.mp3'
+INSTR = {
+    'cello': ['C2', 'Ds2', 'F2', 'Gs2', 'B2', 'D3', 'F3', 'Gs3', 'B3', 'D4', 'F4', 'Gs4', 'B4', 'C5'],
+    'trumpet': ['F3', 'A3', 'C4', 'Ds4', 'F4', 'G4', 'As4', 'D5', 'F5', 'A5', 'C6'],
+    'clarinet': ['D3', 'F3', 'As3', 'D4', 'F4', 'As4', 'D5', 'F5', 'As5', 'D6', 'Fs6'],
+}
 JS_FILES = ['i18n.js', 'core.js', 'backend.js', 'notation.js', 'audio.js', 'ui.js', 'gen.js', 'mic.js',
             'ex-intervals.js', 'ex-rhythm.js', 'ex-flight.js', 'ex-harmony.js',
-            'ex-sing.js', 'ex-modes.js', 'ex-two.js', 'ex-context.js', 'ex-ctxsing.js', 'app.js']
+            'ex-sing.js', 'ex-modes.js', 'ex-two.js', 'ex-context.js', 'ex-ctxsing.js',
+            'legal.js', 'ex-chords.js', 'ex-audiation.js', 'app.js']
 NAME, SHORT = 'Satzlehre Übungen', 'Satzlehre Übungen'
 DESC = ('Gehörbildung für den Satzlehre-Unterricht. Einheit 1: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug, '
-        'Harmoniefolgen. Einheit 2: Modi singen und schreiben, Blattsingen, zweistimmiges Diktat, Hören im Kontext.')
+        'Harmoniefolgen. Einheit 2: Modi singen und schreiben, Blattsingen, zweistimmiges Diktat, Hören im Kontext. '
+        'Einheit 3: Audiation, Lagen, Basston von Drei- und Septakkorden.')
 
 
 def fetch(url, binary=False):
@@ -35,6 +45,26 @@ def fetch(url, binary=False):
         req = urllib.request.Request(url, headers={'User-Agent': UA})
         f.write_bytes(urllib.request.urlopen(req, timeout=60).read())
     return f.read_bytes() if binary else f.read_text('utf-8')
+
+
+def mean_db(path, secs=1.2):
+    # loudness of the first moments of a note (where the attack sits), in dB
+    r = subprocess.run(['ffmpeg', '-v', 'info', '-t', str(secs), '-i', str(path), '-af', 'volumedetect', '-f', 'null', '-'],
+                       capture_output=True, text=True)
+    return float(re.search(r'mean_volume: (-?[\d.]+) dB', r.stderr).group(1))
+
+
+def instr_sample(inst, n):
+    out = CACHE / f'instr-v1-{inst}-{n}.mp3'
+    if not out.exists():
+        raw = CACHE / f'instr-raw-{inst}-{n}.mp3'
+        raw.write_bytes(fetch(INSTR_URL.format(inst, n), binary=True))
+        ref = CACHE / 'instr-ref-piano.mp3'
+        ref.write_bytes(fetch(SAMPLE_URL.format('C4'), binary=True))
+        gain = mean_db(ref) - mean_db(raw)
+        subprocess.run(['ffmpeg', '-y', '-v', 'error', '-i', str(raw), '-t', '4',
+                        '-af', f'volume={gain:.2f}dB,afade=t=out:st=3.2:d=0.8', '-ac', '1', '-b:a', '96k', str(out)], check=True)
+    return out.read_bytes()
 
 
 def make_icons(dst):
@@ -122,6 +152,10 @@ def build_site():
     (OUT / 'samples').mkdir()
     for n in SAMPLES:
         (OUT / 'samples' / f'{n}.mp3').write_bytes(fetch(SAMPLE_URL.format(n), binary=True))
+    for inst, names in INSTR.items():
+        (OUT / 'samples' / inst).mkdir()
+        for n in names:
+            (OUT / 'samples' / inst / f'{n}.mp3').write_bytes(instr_sample(inst, n))
     for f in JS_FILES:
         shutil.copy(ROOT / 'js' / f, OUT / 'js' / f)
     (OUT / 'vendor' / 'vexflow.js').write_text(fetch(VEXFLOW_URL), 'utf-8')
@@ -166,7 +200,7 @@ def build_site():
     digest = hashlib.sha1(b''.join((OUT / f).read_bytes() for f in files)).hexdigest()[:10]
     sw = f"""// Offline cache for Satzlehre Übungen. The version changes with every build.
 const CACHE = 'diktat-{digest}';
-const ASSETS = {json.dumps(['./'] + files)};
+const ASSETS = {json.dumps(['./'] + [f for f in files if f.count('/') < 2 or not f.startswith('samples/')])};
 self.addEventListener('install', e => {{
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
 }});
@@ -206,7 +240,9 @@ def build_single():
     def inline(code):
         return '<script>\n' + code.replace('</script', '<\\/script') + '\n</script>'
     samples = {n: base64.b64encode(fetch(SAMPLE_URL.format(n), binary=True)).decode() for n in SAMPLES}
-    scripts = '\n'.join([inline(fetch(VEXFLOW_URL)), inline('window.PIANO_SAMPLES = ' + json.dumps(samples) + ';')]
+    instr = {i: {n: base64.b64encode(instr_sample(i, n)).decode() for n in names} for i, names in INSTR.items()}
+    scripts = '\n'.join([inline(fetch(VEXFLOW_URL)), inline('window.PIANO_SAMPLES = ' + json.dumps(samples) + ';'),
+                          inline('window.INSTR_SAMPLES = ' + json.dumps(instr) + ';')]
                          + [inline((ROOT / 'js' / f).read_text('utf-8')) for f in JS_FILES])
     icon = base64.b64encode((OUT / 'icons' / 'favicon-64.png').read_bytes()).decode()
     html = (f'<!doctype html>\n<html lang="de">\n<head>\n{head_meta()}'

@@ -1,7 +1,9 @@
 'use strict';
 /* ============================================================
    Sound: sampled grand piano (Salamander Grand Piano, A. Holm, CC BY 3.0)
-   with a synthesized fallback, a wood-block metronome and gentle humanizing
+   with a synthesized fallback, a wood-block metronome and gentle humanizing.
+   Instead of the piano: recorded cello, trumpet or clarinet (tonejs-instruments, CC BY 3.0),
+   picked in the settings; loaded the first time they are chosen.
    ============================================================ */
 const Sound = (() => {
   const SAMPLE_BASE = 'samples/';
@@ -14,6 +16,16 @@ const Sound = (() => {
   let volume = store.get('vol', 0.8);
   const raw = {}, buffers = {};
   let loading = null, loadedMidis = [];
+  // other instruments: sample names per instrument (same list as build_webapp.py)
+  const INSTR = {
+    cello: ['C2', 'Ds2', 'F2', 'Gs2', 'B2', 'D3', 'F3', 'Gs3', 'B3', 'D4', 'F4', 'Gs4', 'B4', 'C5'],
+    trumpet: ['F3', 'A3', 'C4', 'Ds4', 'F4', 'G4', 'As4', 'D5', 'F5', 'A5', 'C6'],
+    clarinet: ['D3', 'F3', 'As3', 'D4', 'F4', 'As4', 'D5', 'F5', 'As5', 'D6', 'Fs6']
+  };
+  const nameMidi = n => { const m = /^([A-G]s?)(\d)$/.exec(n); return NAMES.indexOf(m[1]) + 12 * (+m[2] + 1); };
+  let instrument = store.get('instr', 'piano');
+  if (!INSTR[instrument]) instrument = 'piano';
+  const ibuf = {}, iload = {};
 
   /* ---------- sample loading ---------- */
   function b64ToBuf(b64) {
@@ -41,6 +53,20 @@ const Sound = (() => {
     return loading;
   }
   const hasSamples = () => loadedMidis.length >= 8;
+  function loadInstr(name) {
+    if (iload[name]) return iload[name];
+    const emb = window.INSTR_SAMPLES && window.INSTR_SAMPLES[name];
+    ibuf[name] = {};
+    iload[name] = Promise.allSettled(INSTR[name].map(n =>
+      (emb && emb[n] ? Promise.resolve(b64ToBuf(emb[n]))
+        : fetch(SAMPLE_BASE + name + '/' + n + '.mp3').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }))
+        .then(decode).then(b => { ibuf[name][nameMidi(n)] = b; })));
+    return iload[name];
+  }
+  const hasInstr = name => Object.keys(ibuf[name] || {}).length >= 4;
+  // the sound that is wanted is ready (or what to wait for)
+  const voiceReady = () => instrument === 'piano' ? hasSamples() : hasInstr(instrument);
+  const voiceLoad = () => instrument === 'piano' ? loadSamples() : loadInstr(instrument);
 
   /* ---------- audio graph ---------- */
   function init() {
@@ -60,6 +86,7 @@ const Sound = (() => {
     const nd = noiseBuf.getChannelData(0);
     for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
     loadSamples();
+    if (instrument !== 'piano') loadInstr(instrument);
   }
   function impulse(sec, decay) {
     const len = Math.floor(ctx.sampleRate * sec), buf = ctx.createBuffer(2, len, ctx.sampleRate);
@@ -139,8 +166,28 @@ const Sound = (() => {
       o.connect(g); g.connect(v); o.start(t); o.stop(t + dur + 0.6);
     }
   }
+  // a held instrument: the nearest recorded note, re-pitched; it sounds as long as the note (or the recording) lasts
+  function instrSample(out, t, midi, dur, vel, gain) {
+    const set = ibuf[instrument], ms = Object.keys(set).map(Number);
+    let sm = ms[0];
+    for (const m of ms) if (Math.abs(m - midi) < Math.abs(sm - midi)) sm = m;
+    const src = ctx.createBufferSource();
+    src.buffer = set[sm];
+    src.playbackRate.value = Math.pow(2, (midi - sm) / 12);
+    const len = src.buffer.duration / src.playbackRate.value;
+    const g = ctx.createGain();
+    const lvl = 0.9 * gain * (0.4 + 0.6 * vel);
+    const off = t + clamp(dur, 0.12, Math.max(0.12, len - 0.2));
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(lvl, t + 0.015);
+    g.gain.setValueAtTime(lvl, off);
+    g.gain.setTargetAtTime(0, off, 0.09);
+    src.connect(g); g.connect(out);
+    src.start(t); src.stop(off + 0.8);
+  }
   function piano(out, t, midi, dur, vel = 0.75, gain = 1) {
-    if (hasSamples()) pianoSample(out, t, midi, dur, vel, gain);
+    if (instrument !== 'piano' && hasInstr(instrument)) instrSample(out, t, midi, dur, vel, gain);
+    else if (hasSamples()) pianoSample(out, t, midi, dur, vel, gain);
     else pianoSynth(out, t, midi, dur, vel, gain);
   }
   // wooden metronome "tock"
@@ -208,11 +255,11 @@ const Sound = (() => {
       };
       requestAnimationFrame(tick);
     };
-    if (hasSamples()) startNow();
+    if (voiceReady()) startNow();
     else {
       if (opts.onLoading) opts.onLoading();
-      // wait for the piano (first time only); fall back to the synth after 8 s
-      Promise.race([loadSamples(), new Promise(r => setTimeout(r, 8000))]).then(startNow);
+      // wait for the instrument (first time only); fall back to the piano or the synth after 8 s
+      Promise.race([voiceLoad(), new Promise(r => setTimeout(r, 8000))]).then(startNow);
     }
     return pb;
   }
@@ -255,8 +302,13 @@ const Sound = (() => {
     volume = v; store.set('vol', v);
     if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
   }
+  function setInstrument(v) {
+    instrument = INSTR[v] ? v : 'piano';
+    store.set('instr', instrument);
+    if (ctx && instrument !== 'piano') loadInstr(instrument);
+  }
   prefetch();
-  return { play, stop, note, chime, ready, setVolume, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
+  return { play, stop, note, chime, ready, setVolume, setInstrument, get instrument() { return instrument; }, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
 })();
 
 /* A play button with a progress bar; a second press stops playback */

@@ -1,12 +1,8 @@
 'use strict';
 /* ============================================================
-   Feedback + anonymous usage counts (Firebase Firestore, REST API)
-   - No user IDs, no cookies, no names: a phone only sends "+1" to a counter of the day:
-       devices  – once per day per phone (a stored date, not an ID, prevents counting twice)
-       opens    – each time the app is opened
-       ex_<id>  – each finished exercise (checked or solution shown), per exercise type
-   - Feedback messages go to the "feedback" collection.
-   - The database rules (firestore.rules) only allow adding feedback and adding +1 to a counter;
+   Feedback (Firebase Firestore, REST API) – sent only when someone writes and sends it.
+   - No usage counting, no IDs, no cookies, nothing stored on the phone.
+   - The database rules (firestore.rules) only allow adding feedback;
      nobody can read anything except the owner in the Firebase console.
    - Stays switched off until BACKEND.projectId and BACKEND.apiKey are filled in.
    ============================================================ */
@@ -17,26 +13,12 @@ const BACKEND = {
 
 const Backend = (() => {
   const on = () => !!(BACKEND.projectId && BACKEND.apiKey) && location.protocol === 'https:';
-  const allowed = () => on() && store.get('shareStats', true);
   const base = () => `https://firestore.googleapis.com/v1/projects/${BACKEND.projectId}/databases/(default)/documents`;
-  const today = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
-
-  // add +1 to one counter of today's document (created on first use)
-  function count(field) {
-    if (!allowed()) return;
-    const name = `projects/${BACKEND.projectId}/databases/(default)/documents/days/${today()}`;
-    fetch(`${base()}:commit?key=${BACKEND.apiKey}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
-      body: JSON.stringify({ writes: [{ transform: { document: name, fieldTransforms: [{ fieldPath: field, increment: { integerValue: '1' } }] } }] })
-    }).catch(() => {});
-  }
-  // once per app start: "opened", and once per calendar day: "active device"
-  function appStarted() {
-    if (!allowed()) return;
-    count('opens');
-    if (store.get('lastActive', '') !== today()) { store.set('lastActive', today()); count('devices'); }
-  }
-  function exerciseDone(id) { count('ex_' + id); }
+  // what older versions kept for counting
+  try { ['sdt:shareStats', 'sdt:lastActive'].forEach(k => localStorage.removeItem(k)); } catch (e) { /* storage blocked */ }
+  // usage counting was removed: these stay so the exercises need no changes
+  function appStarted() {}
+  function exerciseDone() {}
 
   async function sendFeedback({ type, text, exercise }) {
     if (!on()) throw new Error('off');
