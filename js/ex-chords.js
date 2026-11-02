@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================================
    Einheit 3 — four-part chords
-     Lagen: one four-part chord of the shown key, in close or open position – write all four voices.
+     Lagen: the tonic triad of the shown key (c-Moll → c es g), in close or open position – write all four voices.
             Nothing is given and nothing sounds while writing.
      Basston (Dreiklänge / Septakkorde): one chord – which chord tone is in the bass?
    ============================================================ */
@@ -18,8 +18,8 @@ const V4_RANGE = { B: [40, 55], T: [48, 67], A: [55, 74], S: [60, 79] };   // mi
 const without = (arr, x) => { const i = arr.indexOf(x), c = arr.slice(); if (i >= 0) c.splice(i, 1); return c; };
 
 /* four voices [B, T, A, S] with chord tone `inv` in the bass.
-   lage: 'close' (no chord tone left out between neighbouring upper voices) · 'open' (one left out between
-   soprano–alto and alto–tenor) · 'any' (one of the two). Triads double the root (5/3, mostly 6) or the
+   lage: 'close' (soprano to tenor within an octave), 'open' (wider, neighbours a third to an octave apart),
+   'any' (one of the two). Triads double the root (5/3, mostly 6) or the
    fifth (6/4); seventh chords are complete. Returns { notes, lage } or null. */
 function fourPart(root, ivs, inv, lage) {
   const upper = ivs.length === 4 ? [0, 1, 2, 3].filter(k => k !== inv)
@@ -30,7 +30,6 @@ function fourPart(root, ivs, inv, lage) {
   for (let d = 10; d <= 34; d++) if (toneAt(d) === inv) { const n = chordTone(root, ivs[inv], d); if (inR(n, 'B')) basses.push(n); }
   if (!basses.length) return null;
   const B = pick(basses);
-  const left = (hi, lo) => { let c = 0; for (let d = lo + 1; d < hi; d++) if (toneAt(d) >= 0) c++; return c; };
   const out = [];
   for (let sd = 30; sd <= 44; sd++) {
     const sk = toneAt(sd);
@@ -48,8 +47,10 @@ function fourPart(root, ivs, inv, lage) {
         if (toneAt(td) !== tk) continue;
         const T = chordTone(root, ivs[tk], td);
         if (!inR(T, 'T') || Note.midi(T) - Note.midi(B) > 24) continue;
-        const gSA = left(sd, ad), gAT = left(ad, td);
-        const kind = gSA === 0 && gAT === 0 ? 'close' : gSA === 1 && gAT === 1 ? 'open' : null;
+        // eng: soprano to tenor within an octave; weit: wider, every two neighbours a third to an octave apart
+        const sm = Note.midi(S), am = Note.midi(A), tm = Note.midi(T);
+        const kind = sm - tm <= 12 ? 'close'
+          : sm - am >= 3 && sm - am <= 12 && am - tm >= 3 && am - tm <= 12 ? 'open' : null;
         if (!kind || (lage !== 'any' && kind !== lage)) continue;
         out.push({ notes: [B, T, A, S], lage: kind });
       }
@@ -58,30 +59,15 @@ function fourPart(root, ivs, inv, lage) {
   return out.length ? pick(out) : null;
 }
 
-/* a chord of the key: the main triads more often; seventh chords on V and II (and VII in minor) */
-function keyChord(key, sev) {
-  const T = 21 + key.step;
-  const pool = (key.minor
-    ? [['m', 0], ['o', 1], ['M', 2], ['m', 3], ['M', 4], ['M', 5]]
-    : [['M', 0], ['m', 1], ['m', 2], ['M', 3], ['M', 4], ['m', 5]]).map(([ty, deg]) => ({ ty, deg, w: [0, 3, 4].includes(deg) ? 2 : 1 }));
-  if (sev) {
-    pool.push({ ty: 'D7', deg: 4, w: 3 }, { ty: key.minor ? 'h7' : 'm7', deg: 1, w: 1.5 });
-    if (key.minor) pool.push({ ty: 'o7', deg: 6, w: 1 });
-  }
-  const c = wpickBy(pool, o => o.w);
-  const d = T + c.deg, root = { d, a: key.sig[mod(d, 7)] + (key.minor && c.deg === 6 ? 1 : 0) };   // minor: raised leading tone
-  return { root, ivs: CHORD_TYPES[c.ty], ty: c.ty, deg: c.deg };
-}
-
 /* ================= Lagen ================= */
 const LAGE_KEYS = { close: 'lgClose', open: 'lgOpen' };
 const LG_VOICES = { 3: 'voiceS', 2: 'voiceA', 1: 'voiceT', 0: 'voiceB' };
 const LG_RANGE = { 3: VOICE_RANGE[3], 2: VOICE_RANGE[2], 1: VOICE_RANGE[1], 0: [12, 28] };   // diatonic limits
 const ExLagen = {
   id: 'lagen', titleKey: 'lgTitle', descKey: 'lgDesc',
-  S: Object.assign({ mode: 'both', maxAcc: 3, inv: true, sev: false, arp: false, dur: 2.4 }, store.get('lagen.s', {})),
+  S: Object.assign({ mode: 'both', maxAcc: 3, inv: false, arp: false, dur: 2.4 }, store.get('lagen.s2', {})),
   task: null, up: null, vcur: { i: 0, v: 3 }, done: false, res: null, hit: null, last: null,
-  save() { store.set('lagen.s', this.S); },
+  save() { store.set('lagen.s2', this.S); },
   get checked() { return this.done; },
 
   build() {
@@ -90,9 +76,7 @@ const ExLagen = {
       segControl('lg-mode', 'modeLbl', [['maj', t('major')], ['min', t('minor')], ['both', t('both')]], S.mode, v => { S.mode = v; this.save(); }),
       segControl('lg-acc', 'maxAcc', [0, 1, 2, 3, 4].map(n => [n, String(n)]), S.maxAcc, v => { S.maxAcc = v; this.save(); }),
       segControl('lg-arp', 'lgPlay', [[false, t('lgBlock')], [true, t('lgArp')]], S.arp, v => { S.arp = v; this.save(); }),
-      toggleGroup('harChords',
-        toggleControl('lg-inv', 'harInv', S.inv, v => { S.inv = v; this.save(); }),
-        toggleControl('lg-sev', 'lgSev', S.sev, v => { S.sev = v; this.save(); })));
+      toggleGroup('options', toggleControl('lg-inv', 'harInv', S.inv, v => { S.inv = v; this.save(); })));
     this.playBtn = playButton('listen', () => this.events(), { primary: true });
     mainControls(this, P, this.playBtn);
     bindStaffInput(P.score, this);
@@ -102,11 +86,11 @@ const ExLagen = {
   },
 
   newTask() {
-    // one chord, not the same as the last one
+    // always the tonic triad of the key; only its layout changes (not the same as last time)
     const S = this.S, key = randomKey(S.maxAcc, S.mode, this.id), chords = [];
+    const c = { root: { d: 21 + key.step, a: key.alt }, ivs: CHORD_TYPES[key.minor ? 'm' : 'M'], ty: key.minor ? 'm' : 'M', deg: 0 };
     for (let g = 0; g < 300 && !chords.length; g++) {
-      const c = keyChord(key, S.sev);
-      const inv = S.inv ? rnd(c.ivs.length) : 0;
+      const inv = S.inv ? wpick([[0, 2], [1, 1], [2, 1]]) : 0;
       const v = fourPart(c.root, c.ivs, inv, chance(0.5) ? 'close' : 'open');
       if (!v) continue;
       const sig = v.notes.map(Note.midi).join();
