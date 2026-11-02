@@ -13,18 +13,51 @@ const Mic = (() => {
   const MIN_HZ = 65, MAX_HZ = 1100, RMS_FLOOR = 0.008, THRESH = 0.15;
 
   const supported = () => !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
+  /* Phones differ a lot here, so step by step:
+     1. wake the sound engine while the tap still counts as a tap (browsers only allow that then)
+     2. ask for the microphone – with plain settings if the browser refuses the detailed ones
+     3. connect it; if this browser cannot mix the microphone's sample rate with the engine's, rebuild the engine
+     4. if the engine is still asleep (the permission question took too long), ask for one more tap */
   async function open() {
     ctx = Sound.ready();
-    if (an) return ctx;
+    if (an) {
+      if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { /* see below */ } }
+      if (ctx.state !== 'running') throw Object.assign(new Error('asleep'), { name: 'Asleep' });
+      return ctx;
+    }
     try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) { /* not supported */ }
-    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
-    src = ctx.createMediaStreamSource(stream);
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    } catch (e) {
+      if (e && ['NotAllowedError', 'SecurityError', 'NotFoundError'].includes(e.name)) throw e;
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    }
+    try { src = ctx.createMediaStreamSource(stream); }
+    catch (e) {
+      const tr = stream.getAudioTracks()[0], rate = tr && tr.getSettings ? tr.getSettings().sampleRate : undefined;
+      ctx = Sound.rebuild(rate);
+      src = ctx.createMediaStreamSource(stream);
+    }
     an = ctx.createAnalyser();
     an.fftSize = 2048;
     src.connect(an);
     buf = new Float32Array(an.fftSize);
-    if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { /* ignore */ } }
+    // iPhones pause the engine when recording starts – wake it again (and again, if it happens later)
+    ctx.onstatechange = () => { if (an && ctx.state !== 'running' && ctx.state !== 'closed') ctx.resume().catch(() => {}); };
+    if (ctx.state !== 'running') { try { await ctx.resume(); } catch (e) { /* see below */ } }
+    if (ctx.state !== 'running') throw Object.assign(new Error('asleep'), { name: 'Asleep' });
     return ctx;
+  }
+  // the message to show when the microphone could not be started
+  function why(e) {
+    if (window.isSecureContext === false) return t('micInsecure');
+    if (!supported()) return t('micBrowser');
+    const n = e && e.name;
+    if (n === 'Asleep') return t('micAgain');
+    if (n === 'NotAllowedError' || n === 'SecurityError') return t('micDenied');
+    if (n === 'NotFoundError' || n === 'OverconstrainedError') return t('micNotFound');
+    if (n === 'NotReadableError' || n === 'AbortError') return t('micBusy');
+    return t('micNo', { e: n || (e && e.message) || '?' });
   }
   function close() {
     try { if (src) src.disconnect(); } catch (e) { /* gone */ }
@@ -83,7 +116,7 @@ const Mic = (() => {
       })
     };
   }
-  return { supported, open, close, frame, recorder, yin, get isOpen() { return !!an; }, get ctx() { return ctx; } };
+  return { supported, open, close, why, frame, recorder, yin, get isOpen() { return !!an; }, get ctx() { return ctx; } };
 })();
 
 /* ---------- judging a take ----------

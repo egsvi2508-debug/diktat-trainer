@@ -69,10 +69,11 @@ const Sound = (() => {
   const voiceLoad = () => instrument === 'piano' ? loadSamples() : loadInstr(instrument);
 
   /* ---------- audio graph ---------- */
-  function init() {
+  function init(rate) {
     if (ctx) return;
     const AC = window.AudioContext || window.webkitAudioContext;
-    ctx = new AC({ latencyHint: 'interactive' });
+    try { ctx = new AC(rate ? { latencyHint: 'interactive', sampleRate: rate } : { latencyHint: 'interactive' }); }
+    catch (e) { ctx = new AC(); }
     master = ctx.createGain(); master.gain.value = volume;
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 3.5;
@@ -302,13 +303,24 @@ const Sound = (() => {
     volume = v; store.set('vol', v);
     if (master) master.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
   }
+  /* a new audio engine at another sample rate – some phones can only connect the microphone when both match.
+     Decoded recordings stay (they work in any context). */
+  function rebuild(rate) {
+    stop();
+    const old = ctx;
+    ctx = null;
+    init(rate);
+    try { old.close(); } catch (e) { /* already closed */ }
+    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+    return ctx;
+  }
   function setInstrument(v) {
     instrument = INSTR[v] ? v : 'piano';
     store.set('instr', instrument);
     if (ctx && instrument !== 'piano') loadInstr(instrument);
   }
   prefetch();
-  return { play, stop, note, chime, ready, setVolume, setInstrument, get instrument() { return instrument; }, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
+  return { play, stop, note, chime, ready, rebuild, setVolume, setInstrument, get instrument() { return instrument; }, get volume() { return volume; }, get playing() { return !!current; }, get engine() { return hasSamples() ? 'piano' : 'synth'; } };
 })();
 
 /* A play button with a progress bar; a second press stops playback */

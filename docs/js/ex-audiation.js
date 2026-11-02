@@ -95,9 +95,9 @@ const ExAud = {
 
   /* ---------- running ---------- */
   async start() {
-    if (!Mic.supported()) { this.micFail('micNo'); return; }
+    if (!Mic.supported()) { this.micFail(Mic.why()); return; }
     try { await Mic.open(); }
-    catch (e) { this.micFail(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'micDenied' : 'micNo'); return; }
+    catch (e) { this.micFail(Mic.why(e)); return; }
     setFeedback(this.P.feedback, '', '');
     this.pool = audPool(this.S.set);
     this.cur = audStart(); this.lastIv = null; this.res = null;

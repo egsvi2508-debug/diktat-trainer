@@ -62,9 +62,9 @@ const ExCtxSing = {
 
   /* ---------- running ---------- */
   async start() {
-    if (!Mic.supported()) { this.micFail('micNo'); return; }
+    if (!Mic.supported()) { this.micFail(Mic.why()); return; }
     try { await Mic.open(); }
-    catch (e) { this.micFail(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'micDenied' : 'micNo'); return; }
+    catch (e) { this.micFail(Mic.why(e)); return; }
     this.phase = 'listen';
     this.render();
     // the chord, then the note appears: stopwatch and microphone start once the chord has died away

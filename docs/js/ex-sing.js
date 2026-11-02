@@ -149,9 +149,9 @@ function makeSing(kind) {
     },
     async startTake() {
       if (this.ctl) return;
-      if (!Mic.supported()) { this.micFail('micNo'); return; }
+      if (!Mic.supported()) { this.micFail(Mic.why()); return; }
       try { await Mic.open(); }
-      catch (e) { this.micFail(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError') ? 'micDenied' : 'micNo'); return; }
+      catch (e) { this.micFail(Mic.why(e)); return; }
       if (this.url) { URL.revokeObjectURL(this.url); this.url = null; }
       this.takeBuf = null;
       this.marks = this.task.notes.map(() => null);
