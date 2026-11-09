@@ -7,44 +7,46 @@ const App = {
   active: null,
   hash: null,
   unit: null,
-  // the units, each with its own page
+  // the sections (by kind of exercise), each with its own page
   units: [
-    { id: 'e1', hash: 'einheit-1', label: 'navE1', title: 'unit1', icon: 'unit1' },
-    { id: 'e2', hash: 'einheit-2', label: 'navE2', title: 'unit2', icon: 'unit2' },
-    { id: 'e3', hash: 'einheit-3', label: 'navE3', title: 'unit3', icon: 'unit3' }
+    { id: 'dikt', hash: 'diktate', label: 'navDikt', title: 'secDikt', icon: 'melody' },
+    { id: 'sing', hash: 'singen', label: 'navSing', title: 'secSing', icon: 'mic' },
+    { id: 'hoer', hash: 'hoeren', label: 'navHoer', title: 'secHoer', icon: 'ear' },
+    { id: 'harm', hash: 'harmonik', label: 'navHarm', title: 'secHarm', icon: 'harmony' }
   ],
-  // every exercise: its screen, unit, group (one group shares the switch at the top), tile and card
+  // every exercise: its screen, section, group, tile and card (the order here is the order on screen)
   list: [
-    { ex: ExInt, hash: 'intervalle', unit: 'e1', nav: 'int', short: 'tabInt', card: 'cardInt', icon: 'interval', tint: 'blue' },
-    { ex: ExLex, hash: 'rhythmus', unit: 'e1', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
-    { ex: ExMel, hash: 'melodie', unit: 'e1', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
-    { ex: ExSec, hash: 'sekunden', unit: 'e1', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
-    { ex: ExTer, hash: 'terzen', unit: 'e1', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
-    { ex: ExHar, hash: 'harmonie', unit: 'e1', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' },
-    { ex: ExModeSing, hash: 'modi-singen', unit: 'e2', nav: 'modi', short: 'tabMs', card: 'cardMs', icon: 'mic', tint: 'lilac', sub: 'subMs' },
-    { ex: ExModeDict, hash: 'modi-diktat', unit: 'e2', nav: 'modi', short: 'tabMd', card: 'cardMd', icon: 'melody', tint: 'sky', sub: 'subMd' },
-    { ex: ExBlatt, hash: 'blattsingen', unit: 'e2', nav: 'blatt', short: 'tabBl', card: 'cardBl', icon: 'sheet', tint: 'sand' },
-    { ex: ExTwo, hash: 'zweistimmig', unit: 'e2', nav: 'zwei', short: 'tabTw', card: 'cardTw', icon: 'duo', tint: 'mint' },
-    { ex: ExCtxNote, hash: 'kontext-ton', unit: 'e2', nav: 'ctx', short: 'tabCxNote', card: 'cardCxNote', icon: 'context', tint: 'blue', sub: 'subCxNote' },
-    { ex: ExCtxIv, hash: 'kontext-zweiklang', unit: 'e2', nav: 'ctx', short: 'tabCxIv', card: 'cardCxIv', icon: 'context', tint: 'lilac', sub: 'subCxIv' },
-    { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'e2', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' },
-    { ex: ExCtxSing, hash: 'kontext-singen', unit: 'e2', nav: 'ctx', short: 'tabCxSing', card: 'cardCxSing', icon: 'mic', tint: 'mint', sub: 'subCxSing' },
-    { ex: ExAud, hash: 'audiation', unit: 'e3', nav: 'aud', short: 'tabAud', card: 'cardAud', icon: 'mic', tint: 'lilac' },
-    { ex: ExLagen, hash: 'lagen', unit: 'e3', nav: 'lagen', short: 'tabLg', card: 'cardLg', icon: 'harmony', tint: 'mint' },
-    { ex: ExBassTri, hash: 'bass-dreiklaenge', unit: 'e3', nav: 'bass', short: 'tabBsTri', card: 'cardBsTri', icon: 'context', tint: 'sky' },
-    { ex: ExBassSev, hash: 'bass-septakkorde', unit: 'e3', nav: 'bass', short: 'tabBsSev', card: 'cardBsSev', icon: 'context', tint: 'sand' }
+    { ex: ExInt, hash: 'intervalle', unit: 'dikt', nav: 'int', short: 'tabInt', card: 'cardInt', icon: 'interval', tint: 'blue' },
+    { ex: ExSec, hash: 'sekunden', unit: 'dikt', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
+    { ex: ExTer, hash: 'terzen', unit: 'dikt', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
+    { ex: ExLex, hash: 'rhythmus', unit: 'dikt', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
+    { ex: ExMel, hash: 'melodie', unit: 'dikt', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
+    { ex: ExModeDict, hash: 'modi-diktat', unit: 'dikt', nav: 'modi', short: 'tabMd', card: 'cardMd', icon: 'melody', tint: 'mint', sub: 'subMd' },
+    { ex: ExTwo, hash: 'zweistimmig', unit: 'dikt', nav: 'zwei', short: 'tabTw', card: 'cardTw', icon: 'duo', tint: 'blue' },
+    { ex: ExBlatt, hash: 'blattsingen', unit: 'sing', nav: 'blatt', short: 'tabBl', card: 'cardBl', icon: 'sheet', tint: 'sand' },
+    { ex: ExModeSing, hash: 'modi-singen', unit: 'sing', nav: 'modi', short: 'tabMs', card: 'cardMs', icon: 'mic', tint: 'lilac', sub: 'subMs' },
+    { ex: ExCtxSing, hash: 'kontext-singen', unit: 'sing', nav: 'ctx', short: 'tabCxSing', card: 'cardCxSing', icon: 'mic', tint: 'mint', sub: 'subCxSing' },
+    { ex: ExAud, hash: 'audiation', unit: 'sing', nav: 'aud', short: 'tabAud', card: 'cardAud', icon: 'mic', tint: 'sky' },
+    { ex: ExCtxNote, hash: 'kontext-ton', unit: 'hoer', nav: 'ctx', short: 'tabCxNote', card: 'cardCxNote', icon: 'context', tint: 'blue', sub: 'subCxNote' },
+    { ex: ExCtxIv, hash: 'kontext-zweiklang', unit: 'hoer', nav: 'ctx', short: 'tabCxIv', card: 'cardCxIv', icon: 'context', tint: 'lilac', sub: 'subCxIv' },
+    { ex: ExCtxTri, hash: 'kontext-dreiklang', unit: 'hoer', nav: 'ctx', short: 'tabCxTri', card: 'cardCxTri', icon: 'context', tint: 'sky', sub: 'subCxTri' },
+    { ex: ExHar, hash: 'harmonie', unit: 'harm', nav: 'har', short: 'tabHar', card: 'cardHar', icon: 'harmony', tint: 'mint' },
+    { ex: ExLagen, hash: 'lagen', unit: 'harm', nav: 'lagen', short: 'tabLg', card: 'cardLg', icon: 'harmony', tint: 'steel' },
+    { ex: ExBassTri, hash: 'bass-dreiklaenge', unit: 'harm', nav: 'bass', short: 'tabBsTri', card: 'cardBsTri', icon: 'context', tint: 'sky' },
+    { ex: ExBassSev, hash: 'bass-septakkorde', unit: 'harm', nav: 'bass', short: 'tabBsSev', card: 'cardBsSev', icon: 'context', tint: 'sand' }
   ],
   // header title of each group
   groups: { int: 'navInt', mel: 'navMel', flug: 'navFlug', har: 'navHar', modi: 'navModi', blatt: 'navBlatt', zwei: 'navZwei', ctx: 'navCtx', aud: 'navAud', lagen: 'navLg', bass: 'navBs' },
-  // bottom bar: start and the units
+  // bottom bar: start and the sections
   navs: [
     { id: 'start', icon: 'home', label: 'navHome' },
-    { id: 'e1', icon: 'unit1', label: 'navE1' },
-    { id: 'e2', icon: 'unit2', label: 'navE2' },
-    { id: 'e3', icon: 'unit3', label: 'navE3' }
+    { id: 'dikt', icon: 'melody', label: 'navDikt' },
+    { id: 'sing', icon: 'mic', label: 'navSing' },
+    { id: 'hoer', icon: 'ear', label: 'navHoer' },
+    { id: 'harm', icon: 'harmony', label: 'navHarm' }
   ],
 
-  // units not shown yet (the code stays; remove an id here to show the unit again)
+  // sections not shown yet (the code stays; remove an id here to show the section again)
   hiddenUnits: [],
 
   init() {
@@ -144,7 +146,7 @@ const App = {
     g.open();
   },
 
-  /* ---------- start screen: both units with their exercises as tiles ---------- */
+  /* ---------- start screen: every section with its exercises as tiles ---------- */
   renderHome() {
     const go = hash => () => this.show(hash);
     const unitBlock = u => {
@@ -167,7 +169,7 @@ const App = {
       ...this.units.flatMap(unitBlock),
       fb ? el('div', { class: 'sec-h' }, el('h2', {}, t('fbSection'))) : '', fb);
   },
-  /* ---------- a unit's page: all its exercises as cards ---------- */
+  /* ---------- a section's page: all its exercises as cards ---------- */
   renderUnit(u) {
     const cards = el('div', { class: 'list' }, this.list.filter(it => it.unit === u.id).map(it =>
       el('button', { type: 'button', class: 'card lcard', onclick: () => this.show(it.hash) },
@@ -193,7 +195,7 @@ const App = {
       bar.replaceChildren(el('span', { class: 'logo-chip', html: ICON.interval }),
         el('div', { class: 'appbar-text' }, el('h1', {}, t('greet')), el('p', {}, t('greetSub'))), gear);
     }
-    // no switching between exercises inside an exercise: back to the unit, then pick another one
+    // no switching between exercises inside an exercise: back to the section, then pick another one
     const sub = $('#subtabs');
     sub.hidden = true;
     sub.replaceChildren();

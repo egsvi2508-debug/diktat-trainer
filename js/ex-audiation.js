@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 3 — Audiation
+   Audiation
    The first note sounds. Then one note at a time appears on the staff, without sound:
    imagine it. The last one is sung and checked with the microphone (any octave).
    Folge: a set number of notes, then sing the last one.

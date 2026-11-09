@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 2 — Hören im Kontext
+   Hören im Kontext
      Ton: the tonic triad of a random key (5/3, 6 or 6/4), then one note – which one?
      Zweiklang: the triad, then two notes at once – which two?
      Dreiklang: the triad, then a major or minor triad of another key – which one?

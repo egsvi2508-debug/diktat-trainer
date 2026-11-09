@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Generators (no screen code), shared by Einheit 1 and 2:
+   Generators (no screen code), shared by all sections:
      • church modes, transposed with the signature of the parent major key
      • step melodies – seconds or thirds – random but varied, no "double repetitions"
      • motif bars: orderings of four notes of a mode
