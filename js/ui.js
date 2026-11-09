@@ -150,7 +150,7 @@ function setFeedback(box, kind, html, ...extra) {
 function fbIcon(kind) { return `<span class="fb-ico">${kind === 'ok' ? ICON.check : kind === 'bad' ? ICON.cross : ICON.ear}</span>`; }
 function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
 
-/* ---------- Einheit 2 building blocks ---------- */
+/* ---------- building blocks for modes, singing and context ---------- */
 /* instructions: shown the first time an exercise is opened in a session (unless switched off), and from ⚙ */
 function howDialog(ex) {
   if (ex.howDlg) ex.howDlg.d.remove();

@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 2 — Zweistimmiges Diktat
+   Zweistimmiges Diktat
    Two voices on the white keys (C-Dur or a-Moll), 4/4. In every half bar the voices either move
    together (1:1) or one has two quarters against a half note of the other (2:1) – nothing else.
    Both first notes are given. Per half bar you pick the rhythm, then write the notes:

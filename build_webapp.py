@@ -33,9 +33,9 @@ JS_FILES = ['i18n.js', 'core.js', 'backend.js', 'notation.js', 'audio.js', 'ui.j
             'ex-sing.js', 'ex-modes.js', 'ex-two.js', 'ex-context.js', 'ex-ctxsing.js',
             'legal.js', 'ex-chords.js', 'ex-audiation.js', 'app.js']
 NAME, SHORT = 'Satzlehre Übungen', 'Satzlehre Übungen'
-DESC = ('Gehörbildung für den Satzlehre-Unterricht. Einheit 1: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug, '
-        'Harmoniefolgen. Einheit 2: Modi singen und schreiben, Blattsingen, zweistimmiges Diktat, Hören im Kontext. '
-        'Einheit 3: Audiation, Lagen, Basston von Drei- und Septakkorden.')
+DESC = ('Gehörbildung für den Satzlehre-Unterricht. Diktate: Intervalle, Diktat im Flug, Rhythmus und Melodie in 6/8, '
+        'Modi, zweistimmig. Singen: Blattsingen, Modi, Ton im Kontext, Audiation. Hören im Kontext: Ton, Intervall, Dreiklang. '
+        'Harmonie: Harmoniefolgen, Lagen, Basston von Drei- und Septakkorden.')
 
 
 def fetch(url, binary=False):

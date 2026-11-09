@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 2 — writing modes down (same format as the singing: 4/4, quarter notes, one figure per bar)
+   writing modes down (same format as the singing: 4/4, quarter notes, one figure per bar)
      Modi-Diktat: orderings of four notes of a mode – you write what you hear
      Modale Muster: a four-note figure sequenced through a mode – you write it
    Only the first note is given. The notes of the range sit as buttons in the dock: tap = write.

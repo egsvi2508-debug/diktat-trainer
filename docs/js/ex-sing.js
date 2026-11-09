@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 2 — singing with a check
+   singing with a check
      Modi singen: four notes of a mode in ever new orderings, one 4/4 bar each
      Blattsingen: whole and half steps within a fifth
    The first note sounds, one bar is counted in, then you sing every quarter on its beat to a

@@ -142,11 +142,8 @@ const I18N = {
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde',
 
     // ---------- units ----------
-    unit1: 'Einheit 1', unit2: 'Einheit 2', navE1: 'Einheit 1', navE2: 'Einheit 2', unitAll: 'Alle anzeigen',
-    unit1Desc: 'Intervalle, Rhythmus & Melodie, Diktat im Flug, Harmonie',
-    unit2Desc: 'Modi, Blattsingen, Zweistimmig, Im Kontext',
-    unit1Intro: 'Intervalle notieren, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug (nur Sekunden oder nur Terzen) und Harmoniefolgen.',
-    unit2Intro: 'Modi, Blattsingen, Zweistimmig, Im Kontext',
+    secDikt: 'Diktate', secSing: 'Singen', secHoer: 'Hören im Kontext', secHarm: 'Harmonie', unitAll: 'Alle anzeigen',
+    navDikt: 'Diktate', navSing: 'Singen', navHoer: 'Hören', navHarm: 'Harmonie',
     navModi: 'Modi', navBlatt: 'Blattsingen', navZwei: 'Zweistimmig', navCtx: 'Im Kontext',
     tabMs: 'Modi singen', tabMd: 'Modi-Diktat', tabMp: 'Modale Muster', tabBl: 'Blattsingen', tabTw: 'Zweistimmig',
     tabCxNote: 'Ton im Kontext', tabCxIv: 'Intervall im Kontext', tabCxTri: 'Dreiklang im Kontext',
@@ -236,8 +233,7 @@ const I18N = {
     cxSingTitle: 'Ton singen im Kontext', cxSingDesc: 'Akkord, dann den Ton singen.',
     cxSingHow2: 'Dann erscheint ein Ton – sing ihn. Jede Oktave zählt.', cxSingHow3: 'Die Uhr läuft ab dem Ton.',
     cxSungWrong: 'Gesucht war {x} – du hast {u} gesungen.',
-    // Einheit 3
-    unit3: 'Einheit 3', navE3: 'Einheit 3', navAud: 'Audiation', navLg: 'Lagen', navBs: 'Basston',
+    navAud: 'Audiation', navLg: 'Lagen', navBs: 'Basston',
     tabAud: 'Audiation', cardAud: 'Ton hören, Töne vorstellen, den letzten singen',
     audTitle: 'Audiation', audDesc: 'Erster Ton klingt. Die anderen nur vorstellen. Den letzten singen.',
     audSteps: 'Schritte', audSek: 'Sekunden', audTer: 'Terzen', audQQ: 'Quarten und Quinten', audAll: 'Alle Intervalle',
@@ -401,11 +397,8 @@ const I18N = {
     harFirstBass: 'first bass note: {n}', harNChords: '{n} chords',
 
     // ---------- units ----------
-    unit1: 'Unit 1', unit2: 'Unit 2', navE1: 'Unit 1', navE2: 'Unit 2', unitAll: 'Show all',
-    unit1Desc: 'Intervals, Rhythm & melody, Dictation on the fly, Harmony',
-    unit2Desc: 'Modes, Sight singing, Two voices, In context',
-    unit1Intro: 'Notating intervals, rhythm and melody dictation in 6/8, dictation on the fly (only seconds or only thirds) and progressions.',
-    unit2Intro: 'Modes, Sight singing, Two voices, In context',
+    secDikt: 'Dictation', secSing: 'Singing', secHoer: 'Hearing in context', secHarm: 'Harmony', unitAll: 'Show all',
+    navDikt: 'Dictation', navSing: 'Singing', navHoer: 'Hearing', navHarm: 'Harmony',
     navModi: 'Modes', navBlatt: 'Sight singing', navZwei: 'Two voices', navCtx: 'In context',
     tabMs: 'Sing modes', tabMd: 'Mode dictation', tabMp: 'Modal patterns', tabBl: 'Sight singing', tabTw: 'Two voices',
     tabCxNote: 'Note in context', tabCxIv: 'Interval in context', tabCxTri: 'Triad in context',
@@ -495,8 +488,7 @@ const I18N = {
     cxSingTitle: 'Sing a note in context', cxSingDesc: 'Chord, then sing the note.',
     cxSingHow2: 'Then a note appears – sing it. Any octave counts.', cxSingHow3: 'The clock runs from the note.',
     cxSungWrong: 'It was {x} – you sang {u}.',
-    // Unit 3
-    unit3: 'Unit 3', navE3: 'Unit 3', navAud: 'Audiation', navLg: 'Positions', navBs: 'Bass note',
+    navAud: 'Audiation', navLg: 'Positions', navBs: 'Bass note',
     tabAud: 'Audiation', cardAud: 'Hear a note, imagine the next ones, sing the last',
     audTitle: 'Audiation', audDesc: 'The first note sounds. Imagine the others. Sing the last one.',
     audSteps: 'Steps', audSek: 'Seconds', audTer: 'Thirds', audQQ: 'Fourths and fifths', audAll: 'All intervals',

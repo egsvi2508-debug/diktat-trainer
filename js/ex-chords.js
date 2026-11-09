@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 3 — four-part chords
+   Four-part chords
      Lagen: the tonic triad of the shown key (c-Moll → c es g), in close or open position – write all four voices.
             Nothing is given and nothing sounds while writing.
      Basston (Dreiklänge / Septakkorde): one chord – which chord tone is in the bass?

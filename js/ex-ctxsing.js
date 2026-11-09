@@ -1,6 +1,6 @@
 'use strict';
 /* ============================================================
-   Einheit 2 — Ton singen im Kontext
+   Ton singen im Kontext
    The tonic triad of a random key (5/3, 6 or 6/4) sounds, then a note is shown – sing it.
    The stopwatch runs from the moment the note appears. The microphone takes the first steady pitch
    (any octave) and judges it at once: right or wrong. Chord tones come up rarely, as in "Ton im Kontext".
