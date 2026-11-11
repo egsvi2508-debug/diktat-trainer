@@ -33,7 +33,7 @@ JS_FILES = ['i18n.js', 'core.js', 'backend.js', 'notation.js', 'audio.js', 'ui.j
             'ex-sing.js', 'ex-modes.js', 'ex-two.js', 'ex-context.js', 'ex-ctxsing.js',
             'legal.js', 'ex-chords.js', 'ex-audiation.js', 'app.js']
 NAME, SHORT = 'Satzlehre Übungen', 'Satzlehre Übungen'
-DESC = ('Gehörbildung für den Satzlehre-Unterricht. Diktate: Intervalle, Rhythmus und Melodie in 6/8, Diktat im Flug, '
+DESC = ('Gehörbildung für den Satzlehre-Unterricht. Diktate: Intervalle, Rhythmus und Melodie in 6/8, Diktat im Flug (auch schwer, oktavversetzt), '
         'Modi, zweistimmig. Singen: Modi, Blattsingen, Ton im Kontext, Audiation. Hören im Kontext: Ton, Intervall, Dreiklang. '
         'Harmonik: Harmoniefolgen, Lagen, Basston von Drei- und Septakkorden.')
 
