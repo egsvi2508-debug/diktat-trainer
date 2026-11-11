@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Satzlehre Übungen",
   "short_name": "Satzlehre Übungen",
-  "description": "Gehörbildung für den Satzlehre-Unterricht. Einheit 1: Intervalle, Rhythmus- und Melodiediktat in 6/8, Diktat im Flug, Harmoniefolgen. Einheit 2: Modi singen und schreiben, Blattsingen, zweistimmiges Diktat, Hören im Kontext. Einheit 3: Audiation, Lagen, Basston von Drei- und Septakkorden.",
+  "description": "Gehörbildung für den Satzlehre-Unterricht. Diktate: Intervalle, Rhythmus und Melodie in 6/8, Diktat im Flug, Modi, zweistimmig. Singen: Modi, Blattsingen, Ton im Kontext, Audiation. Hören im Kontext: Ton, Intervall, Dreiklang. Harmonik: Harmoniefolgen, Lagen, Basston von Drei- und Septakkorden.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

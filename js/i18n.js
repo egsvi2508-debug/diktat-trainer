@@ -141,7 +141,9 @@ const I18N = {
     harRes: '{ok} von {n} Basstönen richtig.', harOct: '{n} davon in einer anderen Oktave – zählt als richtig.',
     harFirstBass: 'erster Basston: {n}', harNChords: '{n} Akkorde',
 
-    // ---------- units ----------
+    // ---------- sections ----------
+    secDik: 'Diktate', secSing: 'Singen', secKon: 'Hören im Kontext', secHarm: 'Harmonik',
+    navDik: 'Diktate', navSing: 'Singen', navKon: 'Kontext', navHarm: 'Harmonik',
     unit1: 'Einheit 1', unit2: 'Einheit 2', navE1: 'Einheit 1', navE2: 'Einheit 2', unitAll: 'Alle anzeigen',
     unit1Desc: 'Intervalle, Rhythmus & Melodie, Diktat im Flug, Harmonie',
     unit2Desc: 'Modi, Blattsingen, Zweistimmig, Im Kontext',
@@ -400,7 +402,9 @@ const I18N = {
     harRes: '{ok} of {n} bass notes correct.', harOct: '{n} of them in a different octave – counted as correct.',
     harFirstBass: 'first bass note: {n}', harNChords: '{n} chords',
 
-    // ---------- units ----------
+    // ---------- sections ----------
+    secDik: 'Dictation', secSing: 'Singing', secKon: 'Hearing in context', secHarm: 'Harmony',
+    navDik: 'Dictation', navSing: 'Singing', navKon: 'Context', navHarm: 'Harmony',
     unit1: 'Unit 1', unit2: 'Unit 2', navE1: 'Unit 1', navE2: 'Unit 2', unitAll: 'Show all',
     unit1Desc: 'Intervals, Rhythm & melody, Dictation on the fly, Harmony',
     unit2Desc: 'Modes, Sight singing, Two voices, In context',
