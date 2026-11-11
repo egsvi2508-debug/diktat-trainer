@@ -123,6 +123,9 @@ const I18N = {
 
     secTitle: 'Diktat im Flug: Sekunden', terTitle: 'Diktat im Flug: Terzen',
     secDesc: 'Nur Sekunden. Mitschreiben, dann eintragen.',
+    sec2Title: 'Diktat im Flug: Sekunden (schwer)', sec2Desc: 'Die Tonnamen gehen immer eine Sekunde weiter – manchmal aber eine Oktave höher oder tiefer (klingt als Septime oder None). Mitschreiben, dann eintragen.',
+    tabSec2: 'Sekunden schwer', cardSec2: 'Sekunden, manchmal eine Oktave versetzt', subSec2: 'Sekunden schwer',
+    flOct: '{n} davon nur in der falschen Oktave.',
     terDesc: 'Nur Terzen. Mitschreiben, dann eintragen.',
     flMode: 'Tonvorrat', flFree: 'frei (chromatisch)', flKey: 'in einer Tonart',
     clefLbl: 'Schlüssel', clefTreble: 'Violinschlüssel', clefBass: 'Bassschlüssel',
@@ -384,6 +387,9 @@ const I18N = {
 
     secTitle: 'Dictation on the fly: seconds', terTitle: 'Dictation on the fly: thirds',
     secDesc: 'Only seconds. Write along, then enter.',
+    sec2Title: 'Dictation on the fly: seconds (hard)', sec2Desc: 'The note names always move by a second – but sometimes an octave higher or lower (heard as a seventh or a ninth). Write along, then enter.',
+    tabSec2: '2nds hard', cardSec2: 'Seconds, sometimes an octave apart', subSec2: 'Seconds (hard)',
+    flOct: '{n} of them only in the wrong octave.',
     terDesc: 'Only thirds. Write along, then enter.',
     flMode: 'Pitch set', flFree: 'free (chromatic)', flKey: 'within a key',
     clefLbl: 'Clef', clefTreble: 'treble', clefBass: 'bass',

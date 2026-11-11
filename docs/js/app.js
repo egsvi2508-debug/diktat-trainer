@@ -20,6 +20,7 @@ const App = {
     { ex: ExLex, hash: 'rhythmus', unit: 'dik', nav: 'mel', short: 'tabLex', card: 'cardLex', icon: 'rhythm', tint: 'lilac', sub: 'subLex' },
     { ex: ExMel, hash: 'melodie', unit: 'dik', nav: 'mel', short: 'tabMel', card: 'cardMel', icon: 'melody', tint: 'sky', sub: 'subMel' },
     { ex: ExSec, hash: 'sekunden', unit: 'dik', nav: 'flug', short: 'tabSec', card: 'cardSec', icon: 'seconds', tint: 'sand', sub: 'subSec' },
+    { ex: ExSec2, hash: 'sekunden-schwer', unit: 'dik', nav: 'flug', short: 'tabSec2', card: 'cardSec2', icon: 'seconds', tint: 'lilac', sub: 'subSec2' },
     { ex: ExTer, hash: 'terzen', unit: 'dik', nav: 'flug', short: 'tabTer', card: 'cardTer', icon: 'thirds', tint: 'steel', sub: 'subTer' },
     { ex: ExModeDict, hash: 'modi-diktat', unit: 'dik', nav: 'modi', short: 'tabMd', card: 'cardMd', icon: 'melody', tint: 'sky', sub: 'subMd' },
     { ex: ExTwo, hash: 'zweistimmig', unit: 'dik', nav: 'zwei', short: 'tabTw', card: 'cardTw', icon: 'duo', tint: 'mint' },

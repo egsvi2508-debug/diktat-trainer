@@ -1,12 +1,14 @@
 'use strict';
 /* ============================================================
    Exercises 3 & 4 — Diktat im Flug (only seconds / only thirds)
+   hard: seconds by letter name, but now and then the next note jumps an octave
+   (heard as a seventh or a ninth), so the octave has to be written too
    ============================================================ */
-function makeFlight(kind) {
-  const id = kind === 2 ? 'sec' : 'ter';
+function makeFlight(kind, hard) {
+  const id = hard ? 'sec2' : kind === 2 ? 'sec' : 'ter';
   return {
-    id, kind, no: kind === 2 ? '3' : '4',
-    titleKey: kind === 2 ? 'secTitle' : 'terTitle', descKey: kind === 2 ? 'secDesc' : 'terDesc',
+    id, kind, hard: !!hard, no: hard ? '3b' : kind === 2 ? '3' : '4',
+    titleKey: hard ? 'sec2Title' : kind === 2 ? 'secTitle' : 'terTitle', descKey: hard ? 'sec2Desc' : kind === 2 ? 'secDesc' : 'terDesc',
     S: Object.assign({ bars: 4, mode: 'free', clef: 'treble', tempo: 40, limit: true, countIn: true }, store.get(id + '.s3', {})),
     task: null, ans: null, cursor: 1, checked: false, res: null, hit: null, playsLeft: 3,
 
@@ -52,8 +54,9 @@ function makeFlight(kind) {
       }
       // random but varied (see stepMelody in gen.js): never A-B-A-B, no figure repeated straight away,
       // minor and major steps in balance, no long runs in one direction, plain spellings (no E♯, F♭, ×, 𝄫)
-      const notes = stepMelody({ n: L, size: this.kind, lo, hi, key, start: first }) ||
+      let notes = stepMelody({ n: L, size: this.kind, lo, hi, key, start: first }) ||
         Array.from({ length: L }, (_, i) => ({ d: first.d + (i % 2) * step, a: key ? key.sig[mod(first.d + (i % 2) * step, 7)] : 0 }));
+      if (this.hard) notes = this.displace(notes);
       this.task = { notes, key };
       this.ans = notes.map((n, i) => this.isGiven(i) ? { ...n } : null);
       this.cursor = 1;
@@ -63,6 +66,29 @@ function makeFlight(kind) {
         this.P.solWrap.hidden = true;
         this.render();
       }
+    },
+
+    /* move some notes an octave up or down: the letter names stay a second apart,
+       the sound becomes a seventh or a ninth. About one note in four jumps, never two jumps
+       in a row, both directions, and everything stays within a few ledger lines */
+    displace(notes) {
+      const [lo, hi] = this.S.clef === 'treble' ? [55, 88] : [33, 67];
+      for (let tries = 0; tries < 40; tries++) {
+        let sh = 0, jumps = 0, up = 0, last = -9;
+        const out = notes.map((n, i) => {
+          if (i > 0 && i - last > 1 && chance(0.28)) {
+            const dirs = [1, -1].filter(dir => { const m = Note.midi({ d: n.d + 7 * (sh + dir), a: n.a }); return m >= lo && m <= hi; });
+            if (dirs.length) { const dir = pick(dirs); sh += dir; jumps++; if (dir > 0) up++; last = i; }
+          }
+          let o = { d: n.d + 7 * sh, a: n.a };
+          // a note pushed out of range by an earlier jump comes back (that is a jump too)
+          if (Note.midi(o) > hi || Note.midi(o) < lo) { sh += Note.midi(o) > hi ? -1 : 1; o = { d: n.d + 7 * sh, a: n.a }; jumps++; last = i; }
+          return o;
+        });
+        const ok = out.every(o => Note.midi(o) >= lo && Note.midi(o) <= hi);
+        if (ok && jumps >= Math.max(2, Math.round(notes.length / 6)) && up > 0 && up < jumps) return out;
+      }
+      return notes;
     },
 
     /* slow, legato, with a light accent on each downbeat and a little ritardando at the very end */
@@ -100,7 +126,7 @@ function makeFlight(kind) {
       for (let j = bar * 4; j < i; j++) prev.push(this.ans[j]);
       return readAlt(prev, d, this.task.key ? this.task.key.sig : NO_SIG);
     },
-    diaRange() { return this.S.clef === 'treble' ? [24, 44] : [10, 32]; },
+    diaRange() { return this.hard ? (this.S.clef === 'treble' ? [21, 47] : [7, 35]) : this.S.clef === 'treble' ? [24, 44] : [10, 32]; },
     setNote(i, n) {
       this.ans[i] = n;
       if (App.hearInput) Sound.note(Note.midi(n));
@@ -127,11 +153,12 @@ function makeFlight(kind) {
       if (this.checked) return;
       const filled = this.hasInput() ? 1 : 0;
       if (!filled) { this.reveal(); return; }
-      let ok = 0, enh = 0;
+      let ok = 0, enh = 0, oct = 0;
       const marks = this.task.notes.map((sn, i) => {
         if (this.isGiven(i)) return 'given';
         const u = this.ans[i];
         if (u && Note.sameMidi(u, sn)) { ok++; if (!Note.eq(u, sn)) enh++; return 'ok'; }
+        if (u && mod(Note.midi(u) - Note.midi(sn), 12) === 0) oct++;
         return 'bad';
       });
       const n = this.task.notes.filter((_, i) => !this.isGiven(i)).length;
@@ -142,6 +169,7 @@ function makeFlight(kind) {
       const kind = pct === 100 ? 'ok' : pct >= 60 ? 'info' : 'bad';
       let msg = t('flRes', { ok, n });
       if (enh) msg += ' ' + t('flEnh', { n: enh });
+      if (oct) msg += ' ' + t('flOct', { n: oct });
       setFeedback(this.P.feedback, kind, fbIcon(kind) + `<span>${esc(msg)}</span>`);
       this.P.solWrap.hidden = false;
       this.render(); this.renderSolution();
@@ -185,7 +213,8 @@ function makeFlight(kind) {
       if (this.checked) dockHide(P);
       else {
         const lbl = t('dockNoteN', { i: this.cursor + 1, n: this.ans.length });
-        dockNote(P, this, lbl, this.ans[this.cursor], { steps: true });
+        // hard: the letter keys give the second, the 8 buttons move it to the right octave
+        dockNote(P, this, lbl, this.ans[this.cursor], { steps: !this.hard });
       }
       this.playBtn.refresh();
       syncControls(this);
@@ -206,3 +235,4 @@ function makeFlight(kind) {
 }
 const ExSec = makeFlight(2);
 const ExTer = makeFlight(3);
+const ExSec2 = makeFlight(2, true);
