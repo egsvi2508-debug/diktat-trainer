@@ -68,25 +68,32 @@ function makeFlight(kind, hard) {
       }
     },
 
-    /* move some notes an octave up or down: the letter names stay a second apart,
-       the sound becomes a seventh or a ninth. About one note in four jumps, never two jumps
-       in a row, both directions, and everything stays within a few ledger lines */
+    /* move notes an octave up or down: the letter names stay a second apart,
+       the sound becomes a seventh or a ninth. About half of the steps jump, at most
+       two jumps in a row, both directions, and everything stays within a few ledger lines */
     displace(notes) {
       const [lo, hi] = this.S.clef === 'treble' ? [55, 88] : [33, 67];
-      for (let tries = 0; tries < 40; tries++) {
-        let sh = 0, jumps = 0, up = 0, last = -9;
+      const inRange = o => Note.midi(o) >= lo && Note.midi(o) <= hi;
+      const steps = notes.length - 1;
+      for (let tries = 0; tries < 80; tries++) {
+        let sh = 0, run = 0;
         const out = notes.map((n, i) => {
-          if (i > 0 && i - last > 1 && chance(0.28)) {
-            const dirs = [1, -1].filter(dir => { const m = Note.midi({ d: n.d + 7 * (sh + dir), a: n.a }); return m >= lo && m <= hi; });
-            if (dirs.length) { const dir = pick(dirs); sh += dir; jumps++; if (dir > 0) up++; last = i; }
+          let jumped = false;
+          if (i > 0 && run < 2 && chance(0.56)) {
+            const dirs = [1, -1].filter(dir => inRange({ d: n.d + 7 * (sh + dir), a: n.a }));
+            if (dirs.length) { sh += pick(dirs); jumped = true; }
           }
           let o = { d: n.d + 7 * sh, a: n.a };
           // a note pushed out of range by an earlier jump comes back (that is a jump too)
-          if (Note.midi(o) > hi || Note.midi(o) < lo) { sh += Note.midi(o) > hi ? -1 : 1; o = { d: n.d + 7 * sh, a: n.a }; jumps++; last = i; }
+          if (!inRange(o)) { sh += Note.midi(o) > hi ? -1 : 1; o = { d: n.d + 7 * sh, a: n.a }; jumped = true; }
+          run = jumped ? run + 1 : 0;
           return o;
         });
-        const ok = out.every(o => Note.midi(o) >= lo && Note.midi(o) <= hi);
-        if (ok && jumps >= Math.max(2, Math.round(notes.length / 6)) && up > 0 && up < jumps) return out;
+        const isJump = out.map((o, i) => i > 0 && Math.abs(o.d - out[i - 1].d) > 1);
+        if (isJump.some((j, i) => j && isJump[i - 1] && isJump[i - 2])) continue;
+        const jumps = out.filter((o, i) => isJump[i]);
+        const up = jumps.filter(o => o.d > out[out.indexOf(o) - 1].d).length;
+        if (out.every(inRange) && jumps.length >= Math.round(steps * 0.42) && jumps.length <= Math.round(steps * 0.6) && up > 0 && up < jumps.length) return out;
       }
       return notes;
     },
